@@ -59,7 +59,7 @@ export default function EditRestaurant() {
               
               // Ensure userEmail is truthy before making the API call
               if (userEmail) {
-                const response = await fetch(`http://192.168.1.6:5000/restaurantProfileData?email=${userEmail}`, {
+                const response = await fetch(`http://192.168.180.86:5000/restaurantProfileData?email=${userEmail}`, {
                   method: 'GET',
                   headers: {
                     'Content-Type': 'application/json',
@@ -103,7 +103,7 @@ export default function EditRestaurant() {
     const handleUpdatePress = async () => {
         try {
             // Check if any of the required data is null or undefined
-            if (!restaurantName || !latitude || !longitude || !userEmail) {
+            if (!restaurantName || !latitude || !longitude || !userEmail || !phoneNumber) {
                 Alert.alert("Please fill all required data");
                 return;
             }
@@ -113,7 +113,7 @@ export default function EditRestaurant() {
                 setUserEmail(decodedToken.email);
             }
             setApiLoading(true); // Set loading state to true when starting the API request
-            const response = await fetch('http://192.168.1.6:5000/restaurantProfileEdit', {
+            const response = await fetch('http://192.168.180.86:5000/restaurantProfileEdit', {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -123,7 +123,8 @@ export default function EditRestaurant() {
                     latitude: latitude,
                     longitude: longitude,
                     location: "added",
-                    email: userEmail
+                    email: userEmail,
+                    phoneNumber: phoneNumber
                 }),
             });
     

@@ -8,8 +8,8 @@ const Chart = ({ data }) => {
       {/* Overlay View for custom text */}
       <View style={{ position: 'absolute', top: 40, left: 0, right: 0, zIndex: 2 }}>
         {/* Custom text */}
-        <Text style={{ color: 'white', fontSize: 13, fontWeight: 'bold', textAlign: 'center' }}>Total sales</Text>
-        <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold', textAlign: 'center' }}>₹1189.00</Text>
+        <Text style={{ color: 'white', fontSize: 13, fontWeight: 'bold', textAlign: 'center' }}>Total revenue</Text>
+        <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold', textAlign: 'center' }}>₹367770s.00</Text>
       </View>
       <BarChart
         data={data}

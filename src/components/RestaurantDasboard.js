@@ -16,7 +16,7 @@ export default function RestaurantDashboard() {
   // Sample data for each time period
   const todayData = {
     labels: ["9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM"],
-    datasets: [{ data: [0, 0, 0, 0, 0, 0] }]
+    datasets: [{ data: [90000, 0, 0, 367770, 0, 0] }]
   };
 
   const yesterdayData = {
@@ -59,7 +59,7 @@ export default function RestaurantDashboard() {
         const userEmail = decodedToken.email;
   
         // Proceed with API call using userEmail
-        const response = await fetch(`http://192.168.1.6:5000/restaurantProfileData?email=${userEmail}`, {
+        const response = await fetch(`http://192.168.180.86:5000/restaurantProfileData?email=${userEmail}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -70,10 +70,10 @@ export default function RestaurantDashboard() {
 
         const data = await response.json();
         // Process the data received from the API
-        if(data.location==="adhhded"){
+        if(data.location==="added" && data.phoneNumber!=="not set"){
           navigation.navigate("UploadMenu")
         } else{
-          Alert.alert(data)
+          Alert.alert("You much upload your phone number and location")
         }
         console.log(data);
       }
