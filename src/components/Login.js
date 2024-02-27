@@ -39,7 +39,7 @@ const LoginForm = ({ route }) => {
     const { name, email } = userdata.user;
   
     try {
-      const response = await fetch('http://192.168.1.5:5000/register', {
+      const response = await fetch('http://192.168.1.6:5000/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

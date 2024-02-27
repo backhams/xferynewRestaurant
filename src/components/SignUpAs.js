@@ -21,7 +21,7 @@ export default function SignUpAs() {
       <TouchableOpacity style={styles.link} onPress={() => navigation.replace('Login', { role: "restaurant" })}>
         <Text style={styles.linkTitle}>Sign Up As Restaurant</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.link} onPress={() => navigation.replace('Login', { role: "deliveryPartner" })}>
+      <TouchableOpacity style={styles.link} onPress={() => navigation.replace('Menu', { role: "deliveryPartner" })}>
         <Text style={styles.linkTitle} >Sign Up As Delivery Partner</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.link}>
