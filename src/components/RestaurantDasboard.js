@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Text, View, TouchableOpacity, StyleSheet, Image, Dimensions, Alert } from 'react-native';
+import ToggleSwitch from 'toggle-switch-react-native'
 import BottomMenu from './BottomMenu';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -12,6 +13,7 @@ export default function RestaurantDashboard() {
   const navigation = useNavigation();
   const [userInfo, setUserInfo] = useState({ name: '', email: '', role: '', image: '' });
   const [selectedOption, setSelectedOption] = useState("Today");
+  const [isSwitchOn, setIsSwitchOn] = useState(false);
 
   // Sample data for each time period
   const todayData = {
@@ -51,15 +53,15 @@ export default function RestaurantDashboard() {
 
     fetchData();
   }, []);
-  
+
   const locationExistendChecker = async () => {
     try {
       const decodedToken = await decodeToken();
       if (decodedToken) {
         const userEmail = decodedToken.email;
-  
+
         // Proceed with API call using userEmail
-        const response = await fetch(`http://192.168.180.86:5000/restaurantProfileData?email=${userEmail}`, {
+        const response = await fetch(`http://192.168.1.5:5000/restaurantProfileData?email=${userEmail}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -70,9 +72,9 @@ export default function RestaurantDashboard() {
 
         const data = await response.json();
         // Process the data received from the API
-        if(data.location==="added" && data.phoneNumber!=="not set"){
+        if (data.location === "added" && data.phoneNumber !== "not set") {
           navigation.navigate("UploadMenu")
-        } else{
+        } else {
           Alert.alert("You much upload your phone number and location")
         }
         console.log(data);
@@ -82,7 +84,11 @@ export default function RestaurantDashboard() {
       // Handle errors if necessary
     }
   };
-  
+
+  const handleToggle = (isOn) => {
+    setIsSwitchOn(isOn);
+    console.log("changed to : ", isOn);
+  };
 
   return (
     <View style={styles.parentContainer}>
@@ -91,9 +97,15 @@ export default function RestaurantDashboard() {
           <AntDesign name="arrowleft" size={24} color="black" />
         </TouchableOpacity>
         <Text style={styles.title}>Dashboard</Text>
-        <TouchableOpacity style={styles.backButtonContainer}>
-          <Feather name="refresh-cw" size={24} color="black" />
-        </TouchableOpacity>
+        <ToggleSwitch
+          isOn={isSwitchOn}
+          onColor="green"
+          offColor="gray"
+          label={isSwitchOn ? "online" : "offline"}
+          labelStyle={{ color: "black", fontWeight: "900" }}
+          size="medium"
+          onToggle={handleToggle}
+        />
       </View>
       <View>
         <ChartOptions onSelectOption={handleSelectOption} />
@@ -111,7 +123,7 @@ export default function RestaurantDashboard() {
           <AntDesign name="menuunfold" size={24} color="black" />
           <Text style={styles.menuText}>Menu Manager</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem} onPress={()=>{locationExistendChecker()}}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => { locationExistendChecker() }}>
           <AntDesign name="upload" size={24} color="black" />
           <Text style={styles.menuText}>Upload Menu</Text>
         </TouchableOpacity>

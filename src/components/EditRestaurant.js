@@ -3,6 +3,7 @@ import { StyleSheet, View, ScrollView, ActivityIndicator, TextInput, TouchableOp
 import getCurrentLocation from './Location';
 import MapView, { Marker, Circle } from 'react-native-maps';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import Feather from 'react-native-vector-icons/Feather';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import { decodeToken } from './LoginToken';
@@ -50,45 +51,45 @@ export default function EditRestaurant() {
     }, []));
     useFocusEffect(
         React.useCallback(() => {
-          const fetchData = async () => {
-            try {
-              const decodedToken = await decodeToken();
-              if (decodedToken) {
-                setUserEmail(decodedToken.email);
-              }
-              
-              // Ensure userEmail is truthy before making the API call
-              if (userEmail) {
-                const response = await fetch(`http://192.168.180.86:5000/restaurantProfileData?email=${userEmail}`, {
-                  method: 'GET',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                });
-        
-                if (!response.ok) {
-                  throw new Error('Failed to fetch data');
+            const fetchData = async () => {
+                try {
+                    const decodedToken = await decodeToken();
+                    if (decodedToken) {
+                        setUserEmail(decodedToken.email);
+                    }
+
+                    // Ensure userEmail is truthy before making the API call
+                    if (userEmail) {
+                        const response = await fetch(`http://192.168.1.5:5000/restaurantProfileData?email=${userEmail}`, {
+                            method: 'GET',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Failed to fetch data');
+                        }
+
+                        const data = await response.json();
+                        setRestaurantName(data.restaurantName)
+                        // setLatitude(data.latitude)
+                        // setLongitude(data.longitude)
+                        console.log('Data:', data);
+                    }
+                } catch (error) {
+                    console.error('Error fetching data:', error);
                 }
-        
-                const data = await response.json();
-                setRestaurantName(data.restaurantName)
-                // setLatitude(data.latitude)
-                // setLongitude(data.longitude)
-                console.log('Data:', data);
-              }
-            } catch (error) {
-              console.error('Error fetching data:', error);
-            }
-          };
-      
-          fetchData();
-      
-          return () => {
-            // Cleanup function if needed
-          };
+            };
+
+            fetchData();
+
+            return () => {
+                // Cleanup function if needed
+            };
         }, [userEmail])
-      );
-      
+    );
+
     const handleMapLongPress = (event) => {
         const { coordinate } = event.nativeEvent;
         setSelectedCoordinate(coordinate);
@@ -107,13 +108,13 @@ export default function EditRestaurant() {
                 Alert.alert("Please fill all required data");
                 return;
             }
-    
+
             const decodedToken = await decodeToken();
             if (decodedToken) {
                 setUserEmail(decodedToken.email);
             }
             setApiLoading(true); // Set loading state to true when starting the API request
-            const response = await fetch('http://192.168.180.86:5000/restaurantProfileEdit', {
+            const response = await fetch('http://192.168.1.5:5000/restaurantProfileEdit', {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -127,7 +128,7 @@ export default function EditRestaurant() {
                     phoneNumber: phoneNumber
                 }),
             });
-    
+
             const data = await response.json();
             if (response.status === 200) {
                 Alert.alert(data);
@@ -141,7 +142,7 @@ export default function EditRestaurant() {
             setApiLoading(false);
         }
     };
-    
+
 
 
     return (
@@ -192,7 +193,7 @@ export default function EditRestaurant() {
                 />
             </View>
             <View style={styles.instructionsContainer}>
-                <Icon style={styles.infoIcon} name="info-circle" size={20} color="gray" />
+                <Feather style={styles.infoIcon} name="info" size={20} color="gray" />
                 <Text style={styles.instructionsText}>
                     To select a manual location, zoom or move the map to the desired position, then long press on the map to set the restaurant location.
                 </Text>
@@ -236,12 +237,14 @@ export default function EditRestaurant() {
                             fillColor="rgba(0, 0, 255, 0.1)"
                         />
                     </MapView>
-                    {accuracy && accuracy > 1000 ? ( // Show low accuracy message if accuracy is greater than 1000 meters
+                    {accuracy && accuracy > 40 ? (
+                        // Show message for inaccurate location
                         <View style={styles.accuracyContainer}>
                             <Icon name="exclamation-triangle" size={20} color="red" />
-                            <Text style={styles.lowAccuracyText}>Low location accuracy. Reported accuracy: {accuracy} meters. Select your location manually from the map.</Text>
+                            <Text style={styles.lowAccuracyText}>Inaccurate location. Reported accuracy: {accuracy} meters. Select your location manually from the map.</Text>
                         </View>
-                    ) : ( // Show accurate location message in green text if accuracy is acceptable
+                    ) : (
+                        // Show message for accurate location
                         <Text style={styles.accurateLocationText}>Accurate location. Reported accuracy: {accuracy} meters. Acceptable for restaurant address.</Text>
                     )}
                 </>
@@ -298,21 +301,21 @@ const styles = StyleSheet.create({
         marginHorizontal: 20,
         marginTop: 10,
     },
-    cordinatesTitle:{
+    cordinatesTitle: {
         flex: 1,
         borderWidth: 1,
         borderColor: 'gray',
         borderRadius: 5,
         padding: 10,
     },
-    CordinatesInputText:{
+    CordinatesInputText: {
         borderWidth: 1,
         borderColor: 'gray',
         borderRadius: 5,
         padding: 10,
     },
     button: {
-        backgroundColor: 'blue',
+        backgroundColor: '#FE5301',
         paddingVertical: 15,
         paddingHorizontal: 20,
         borderRadius: 5,

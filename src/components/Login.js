@@ -39,7 +39,7 @@ const LoginForm = ({ route }) => {
     const { name, email } = userdata.user;
   
     try {
-      const response = await fetch('http://192.168.180.86:5000/register', {
+      const response = await fetch('http://192.168.1.5:5000/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -127,7 +127,7 @@ const LoginForm = ({ route }) => {
       <TouchableOpacity
        onPress={()=>{signIn()}}
         disabled={!isChecked}
-        style={[styles.button, { backgroundColor: isChecked ? '#6A36D1' : 'darkgray' }]}
+        style={[styles.button, { backgroundColor: isChecked ? '#FE5301' : 'darkgray' }]}
       >
          <FontAwesome style={styles.googleIcon} name="google" size={30} color="black" />
         <Text>SIGN UP/IN WITH GOOGLE</Text>
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   button: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#6A36D1',
+    backgroundColor: '#FE5301',
     flexDirection:'row',
     justifyContent:'center',
     marginVertical: 10,

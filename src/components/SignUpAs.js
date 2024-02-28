@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
     fontFamily:'Roboto-Black',
     width: Dimensions.get('window').width,
     textAlign:'center',
-    color:'#824EEA',
+    color:'#FE5301',
     marginTop:30
   },
   titleDescriptionView:{
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
   link: {
     alignItems:'center',
     justifyContent:'center',
-    backgroundColor: '#6A36D1',
+    backgroundColor: '#FE5301',
     marginVertical: 10,
     width: Dimensions.get('window').width - 50,
     height: Dimensions.get('window').height - 750,
