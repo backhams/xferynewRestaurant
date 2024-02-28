@@ -7,6 +7,7 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import { useNavigation } from '@react-navigation/native';
 import { utils } from '@react-native-firebase/app';
 import storage from '@react-native-firebase/storage';
+import { decodeToken, userRole } from './LoginToken';
 
 export default function UploadMenu() {
   const navigation = useNavigation();
@@ -113,36 +114,61 @@ export default function UploadMenu() {
     const url = await storage().ref(uniqueFileName).getDownloadURL();
     console.log(url)
 
-    // If all checks pass, make API call
-    // Replace the URL with your actual API endpoint
-    fetch('https://example.com/api/uploadMenu', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        selectedImage,
-        title,
-        price,
-        comparePrice,
-      }),
-    })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
+
+    try {
+      if (url) {
+        // Call your API with the download URL here
+        const decodedToken = await decodeToken();
+        if(decodedToken){
+          const userEmail = await decodedToken.email;
+          const responseOfAccount = await fetch(`http://192.168.219.86:5000/getAccount?email=${userEmail}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+      
+          // Check if the API call was successful
+          if (responseOfAccount.ok) {
+            const accountData = await responseOfAccount.json();
+            console.log('API Response:', accountData);
+          const response = await fetch(`http://192.168.219.86:5000/menuUpload`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              title:title,
+              price:price,
+              comparePrice:comparePrice,
+              email:accountData.email,
+              phoneNumber:accountData.phoneNumber,
+              restaurantName:accountData.restaurantName,
+              latitude:accountData.latitude,
+              longitude:accountData.longitude,
+              url:url
+
+            })
+          });
+          const data = response.json();
+            // Handle the API response as needed
+            console.log(data)
+          } else {
+            console.error('API request failed:', response.statusText);
+            // Handle the API error
+          }
         }
-        return response.json();
-      })
-      .then(data => {
-        console.log('Success:', data);
-        // Handle success response from server
-        // Show success message or navigate to next screen
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        // Handle error
-        // Show error message or retry the request
-      });
+       
+      } else {
+        console.error('Download URL is empty');
+        // Handle the case where the download URL is empty
+      }
+    } catch (error) {
+      console.error('Error calling API:', error);
+      // Handle error
+      // Show error message or retry the request
+    }
+    
   };
   
 
