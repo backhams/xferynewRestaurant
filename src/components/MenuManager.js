@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Alert, Image, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect,useNavigation } from '@react-navigation/native';
 import { decodeToken } from './LoginToken';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Tooltip from 'react-native-walkthrough-tooltip';
@@ -8,7 +8,9 @@ import storage from '@react-native-firebase/storage';
 import ModalSpin from './ModalSpin';
 
 export default function MenuManager() {
+    const navigation = useNavigation();
     const [menus, setMenus] = useState([]);
+    console.log(menus.url)
     const [selectedMenu, setSelectedMenu] = useState(null); // Track the selected menu for the tooltip
     const [tooltipVisible, setTooltipVisible] = useState(false); // Track the visibility of the tooltip
     const [refreshPage, setRefreshPage] = useState(false);
@@ -22,7 +24,7 @@ export default function MenuManager() {
                     const decodedToken = await decodeToken();
                     if (decodedToken) {
                         const userEmail = decodedToken.email;
-                        const response = await fetch(`http://192.168.1.6:5000/fetchMenu?email=${userEmail}`, {
+                        const response = await fetch(`http://192.168.20.86:5000/fetchMenu?email=${userEmail}`, {
                             method: 'GET',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -53,16 +55,27 @@ export default function MenuManager() {
     const sortedMenus = menus.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     const deleteMenu = async (menuId) => {
-        console.log(menuId);
         try {
             setLoading(true);
     
-            const storageRef = storage().refFromURL(menu.url);
+            // Find the menu item with the matching ID
+            const menuToDelete = menus.find(menu => menu._id === menuId);
+            if (!menuToDelete) {
+                console.error('Menu not found');
+                return;
+            }
+    
+            // Access the URL property of the menu item
+            const menuUrl = menuToDelete.url;
+            console.log('Menu URL:', menuUrl);
+    
+            // Continue with the deletion process
+            const storageRef = storage().refFromURL(menuUrl);
             await storageRef.delete();
             console.log('File deleted successfully');
     
             // Proceed with the API call as the Firebase storage deletion is successful
-            const response = await fetch(`http://192.168.1.6:5000/deleteMenu?id=${menuId}`, {
+            const response = await fetch(`http://192.168.20.86:5000/deleteMenu?id=${menuId}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json'
@@ -87,7 +100,8 @@ export default function MenuManager() {
         }
     
         console.log("Menu deleted:", menuId);
-    };    
+    };
+    
 
 
     const handleDeleteMenu = (menuId) => {
@@ -125,11 +139,21 @@ export default function MenuManager() {
         }
     };
 
+
+    // Function to navigate to MenuDetails screen
+  const navigateToMenuDetails = (menu) => {
+    navigation.navigate('MenuDetails',{
+        menu
+    }); // Navigate to MenuDetails screen
+  };
+
+
     return (
         <ScrollView>
             <View style={styles.container}>
                 {sortedMenus.map((menu, index) => (
                     <View key={index} style={styles.menuItem}>
+                         <TouchableOpacity onPress={() => navigateToMenuDetails(menu)}> 
                         <View style={styles.itemContainer}>
                             <Image source={{ uri: menu.url }} style={styles.image} />
                             <Text numberOfLines={2} ellipsizeMode="tail" style={styles.title}>{menu.title}</Text>
@@ -155,6 +179,7 @@ export default function MenuManager() {
                                 </View>
                             </Tooltip>
                         </View>
+                        </TouchableOpacity>
                     </View>
                 ))}
             </View>
@@ -191,10 +216,12 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         marginTop: 10,
+        color:"black"
     },
     price: {
         fontSize: 16,
         marginTop: 5,
+        color:"black"
     },
     iconContainer: {
         position: 'absolute',

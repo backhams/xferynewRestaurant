@@ -144,7 +144,7 @@ export default function UploadMenu() {
         const decodedToken = await decodeToken();
         if(decodedToken){
           const userEmail = await decodedToken.email;
-          const responseOfAccount = await fetch(`http://192.168.1.6:5000/getAccount?email=${userEmail}`, {
+          const responseOfAccount = await fetch(`http://192.168.20.86:5000/getAccount?email=${userEmail}`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json'
@@ -155,7 +155,7 @@ export default function UploadMenu() {
           if (responseOfAccount.ok) {
             const accountData = await responseOfAccount.json();
             console.log('API Response:', accountData);
-          const response = await fetch(`http://192.168.1.6:5000/menuUpload`, {
+          const response = await fetch(`http://192.168.20.86:5000/menuUpload`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -260,7 +260,7 @@ export default function UploadMenu() {
           <Text style={styles.buttonText}>Select Image</Text>
         </TouchableOpacity>
         <View style={{ flexDirection: 'row' }}>
-          <Text>Image Upload Policies </Text>
+          <Text style={{color:"black"}}>Image Upload Policies </Text>
           <Feather
             style={styles.infoIcon}
             name="info"
@@ -272,7 +272,7 @@ export default function UploadMenu() {
             isVisible={ImageRulesTooltipVisible}
             content={
               <ScrollView>
-                <Text>
+                <Text style={{color:"black"}}>
                   <Text style={{ fontWeight: 'bold', color: 'black' }}>
                     Aspect Ratio:
                   </Text>{"\n"}
@@ -330,7 +330,7 @@ export default function UploadMenu() {
       <View style={styles.form}>
         <Tooltip
           isVisible={titleTooltipVisible}
-          content={<Text> When naming your menu items, aim for descriptive titles that highlight key ingredients and flavors. For example, "Crispy Chicken Patty with Melted Cheese" can be enhanced with extra details like "Indulge in juicy chicken layered with gooey cheese and fresh lettuce". This approach entices customers while effectively showcasing your dish's unique qualities.</Text>}
+          content={<Text style={{color:"black"}}> When naming your menu items, aim for descriptive titles that highlight key ingredients and flavors. For example, "Crispy Chicken Patty with Melted Cheese" can be enhanced with extra details like "Indulge in juicy chicken layered with gooey cheese and fresh lettuce". This approach entices customers while effectively showcasing your dish's unique qualities.</Text>}
           placement="bottom"
           onClose={() => setTitleTooltipVisible(false)}
         >
@@ -443,6 +443,7 @@ const styles = StyleSheet.create({
   },
   headerText: {
     fontSize: 18,
+    color:'black'
   },
   headerSpacer: {
     width: 70,
@@ -463,6 +464,7 @@ const styles = StyleSheet.create({
   selectImageText: {
     fontSize: 18,
     marginBottom: 20,
+    color:"black"
   },
   form: {
     marginTop: 70,
@@ -474,6 +476,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginVertical: 10,
     padding: 5,
+    color:"black"
   },
   button: {
     backgroundColor: '#FE5301',
