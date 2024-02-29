@@ -9,6 +9,7 @@ import { decodeToken, userRole } from './LoginToken';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Chart from './Chart';
 import ChartOptions from './ChartOptions';
+import MenuManager from './MenuManager';
 export default function RestaurantDashboard() {
   const navigation = useNavigation();
   const [userInfo, setUserInfo] = useState({ name: '', email: '', role: '', image: '' });
@@ -61,7 +62,7 @@ export default function RestaurantDashboard() {
         const userEmail = decodedToken.email;
 
         // Proceed with API call using userEmail
-        const response = await fetch(`http://192.168.219.86:5000/restaurantProfileData?email=${userEmail}`, {
+        const response = await fetch(`http://192.168.1.6:5000/restaurantProfileData?email=${userEmail}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -119,7 +120,7 @@ export default function RestaurantDashboard() {
           <AntDesign name="shoppingcart" size={24} color="black" />
           <Text style={styles.menuText}>Orders</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={()=>{navigation.navigate("MenuManager")}}>
           <AntDesign name="menuunfold" size={24} color="black" />
           <Text style={styles.menuText}>Menu Manager</Text>
         </TouchableOpacity>

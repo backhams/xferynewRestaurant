@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Image, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import React, { useState,useEffect } from 'react';
+import { View, Text, TextInput, Image, StyleSheet, TouchableOpacity, Alert, ScrollView,Modal,ActivityIndicator } from 'react-native';
 import ImagePicker from 'react-native-image-crop-picker';
 import Feather from 'react-native-vector-icons/Feather';
 import Tooltip from 'react-native-walkthrough-tooltip';
@@ -7,7 +7,7 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import { useNavigation } from '@react-navigation/native';
 import { utils } from '@react-native-firebase/app';
 import storage from '@react-native-firebase/storage';
-import { decodeToken, userRole } from './LoginToken';
+import { decodeToken } from './LoginToken';
 
 export default function UploadMenu() {
   const navigation = useNavigation();
@@ -22,6 +22,24 @@ export default function UploadMenu() {
   const [ImageRulesTooltipVisible, setImageRulesTooltipVisible] = useState(false);
   const [priceTooltipVisible, setPriceTooltipVisible] = useState(false);
   const [comparePriceTooltipVisible, setComparePriceTooltipVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [loadingText, setLoadingText] = useState('Uploading');
+  const [loadingEllipsis, setLoadingEllipsis] = useState('');
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Update loading ellipsis
+      setLoadingEllipsis(prev => {
+        if (prev.length < 3) {
+          return prev + '.';
+        } else {
+          return '';
+        }
+      });
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const selectImage = async () => {
     try {
@@ -59,9 +77,11 @@ export default function UploadMenu() {
     }
   };
   const handleUpload = async () => {
+    setLoading(true);
     // const reference = storage().ref();
     // Check if all required fields are present
     if (!selectedImage || !title || !price || !comparePrice) {
+      setLoading(false);
       Alert.alert(
         'Missing Fields',
         'Please fill in all required fields.',
@@ -73,6 +93,7 @@ export default function UploadMenu() {
   
     // Check title length
     if (title.length > 85) {
+      setLoading(false);
       Alert.alert(
         'Title Too Long',
         'Title length cannot exceed 85 characters.',
@@ -84,6 +105,7 @@ export default function UploadMenu() {
   
     // Check price
     if (Number(price) < 90) {
+      setLoading(false);
       Alert.alert(
         'Invalid Price',
         'Price must be at least ₹ 90.',
@@ -95,6 +117,7 @@ export default function UploadMenu() {
   
     // Check compare price
     if (Number(comparePrice) < 130) {
+      setLoading(false);
       Alert.alert(
         'Invalid Compare Price',
         'Compare Price must be at least ₹ 130.',
@@ -121,7 +144,7 @@ export default function UploadMenu() {
         const decodedToken = await decodeToken();
         if(decodedToken){
           const userEmail = await decodedToken.email;
-          const responseOfAccount = await fetch(`http://192.168.219.86:5000/getAccount?email=${userEmail}`, {
+          const responseOfAccount = await fetch(`http://192.168.1.6:5000/getAccount?email=${userEmail}`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json'
@@ -132,7 +155,7 @@ export default function UploadMenu() {
           if (responseOfAccount.ok) {
             const accountData = await responseOfAccount.json();
             console.log('API Response:', accountData);
-          const response = await fetch(`http://192.168.219.86:5000/menuUpload`, {
+          const response = await fetch(`http://192.168.1.6:5000/menuUpload`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -150,23 +173,40 @@ export default function UploadMenu() {
 
             })
           });
-          const data = response.json();
-            // Handle the API response as needed
-            console.log(data)
-          } else {
-            console.error('API request failed:', response.statusText);
+         
+        // Check if the API call was successful
+        if (response.ok) {
+          const data = await response.json();
+          // Handle the API response as needed
+          navigation.replace("MenuManager")
+          console.log(data);
+        } else {
+          console.error('API request failed:', response.statusText);
+          // Handle the API error
+          
+          // Delete the file if the API request failed
+          const storageRef = storage().refFromURL(url);
+          await storageRef.delete();
+          console.log('File deleted successfully due to API request failure');
+        }
+      } else {
+            console.error('API request failed:');
             // Handle the API error
+              // Delete the file if the API request failed
+          const storageRef = storage().refFromURL(url);
+          await storageRef.delete();
+          console.log('File deleted successfully due to APgggI request failure');
           }
         }
        
       } else {
-        console.error('Download URL is empty');
-        // Handle the case where the download URL is empty
+        Alert.alert("Download URL is empty")
       }
     } catch (error) {
-      console.error('Error calling API:', error);
-      // Handle error
-      // Show error message or retry the request
+      Alert.alert(error.message)
+    }
+    finally {
+      setLoading(false); // Set loading to false when the task completes (whether success or failure)
     }
     
   };
@@ -200,9 +240,9 @@ export default function UploadMenu() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={loading && styles.disabledContainer}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => navigation.goBack()}  editable={!loading}>
           <AntDesign name="arrowleft" size={24} color="black" />
         </TouchableOpacity>
         <View style={styles.headerSpacer} />
@@ -216,7 +256,7 @@ export default function UploadMenu() {
          
            <Image source={require('../../assets/image/cameraFrame.png')} style={{ width: 200, height: 200 }} />
         )}
-        <TouchableOpacity style={styles.button} onPress={selectImage}>
+        <TouchableOpacity style={styles.button} onPress={selectImage} disabled={loading}>
           <Text style={styles.buttonText}>Select Image</Text>
         </TouchableOpacity>
         <View style={{ flexDirection: 'row' }}>
@@ -309,6 +349,7 @@ export default function UploadMenu() {
           style={[styles.input, { height: Math.max(40, title.length > 85 ? 60 : 40) }]}
           multiline={true}
           numberOfLines={3}
+          editable={!loading}
         />
 
         {titleError ? <Text style={styles.errorText}>{titleError}</Text> : null}
@@ -333,6 +374,7 @@ export default function UploadMenu() {
           onChangeText={handlePriceChange}
           style={styles.input}
           keyboardType="numeric"
+          editable={!loading}
         />
         {priceError ? <Text style={styles.errorText}>{priceError}</Text> : null}
 
@@ -359,6 +401,7 @@ export default function UploadMenu() {
           onChangeText={handleComparePriceChange}
           style={styles.input}
           keyboardType="numeric"
+          editable={!loading}
         />
         {comparePriceError ? (
           <Text style={styles.errorText}>{comparePriceError}</Text>
@@ -368,6 +411,21 @@ export default function UploadMenu() {
           <Text style={styles.buttonText}>Upload</Text>
         </TouchableOpacity>
       </View>
+        
+      {/* Loading Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={loading}
+        onRequestClose={() => { setLoading(false); }}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <ActivityIndicator size="large" color="#FFFFFF" />
+            <Text style={styles.modalText}>{loadingText}{loadingEllipsis}</Text>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -432,5 +490,24 @@ const styles = StyleSheet.create({
   errorText: {
     color: 'red',
     fontSize: 12,
+  },
+  disabledContainer: {
+    opacity: 0.5, // Reduce opacity to visually indicate disabled state
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: '#333333',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modalText: {
+    color: 'white',
+    marginTop: 10,
   },
 });

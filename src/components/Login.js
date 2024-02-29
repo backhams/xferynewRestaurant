@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, StyleSheet, Dimensions, TouchableOpacity,Alert } from 'react-native';
+import { View, Text, Button, StyleSheet, Dimensions, TouchableOpacity,Alert,Modal,ActivityIndicator } from 'react-native';
 import CheckBox from '@react-native-community/checkbox';
 import { Linking } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -28,6 +28,24 @@ const LoginForm = ({ route }) => {
   const [isChecked, setIsChecked] = useState(false);
   const [description, setDescription] = useState('');
   const [currentText, setCurrentText] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [loadingText, setLoadingText] = useState('Sigining Up');
+  const [loadingEllipsis, setLoadingEllipsis] = useState('');
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Update loading ellipsis
+      setLoadingEllipsis(prev => {
+        if (prev.length < 3) {
+          return prev + '.';
+        } else {
+          return '';
+        }
+      });
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(()=>{
     GoogleSignin.configure({
@@ -39,7 +57,8 @@ const LoginForm = ({ route }) => {
     const { name, email } = userdata.user;
   
     try {
-      const response = await fetch('http://192.168.219.86:5000/register', {
+      setLoading(true);
+      const response = await fetch('http://192.168.1.6:5000/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -52,9 +71,11 @@ const LoginForm = ({ route }) => {
       } else {
         // Handle other status codes or errors
         Alert.alert(data)
+        setLoading(false);
       }
     } catch (error) {
       console.error('Error while saving user data to backend:', error);
+      setLoading(false);
     }
   };
   
@@ -142,6 +163,21 @@ const LoginForm = ({ route }) => {
           <Text style={styles.linkText}>I agree to the <Text style={styles.link}>terms and conditions</Text></Text>
         </TouchableOpacity>
       </View>
+          
+      {/* Loading Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={loading}
+        onRequestClose={() => { setLoading(false); }}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <ActivityIndicator size="large" color="#FFFFFF" />
+            <Text style={styles.modalText}>{loadingText}{loadingEllipsis}</Text>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -191,7 +227,26 @@ const styles = StyleSheet.create({
   link: {
     color: 'blue',
     textDecorationLine: 'underline'
-  }
+  },
+   disabledContainer: {
+    opacity: 0.5, // Reduce opacity to visually indicate disabled state
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: '#333333',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modalText: {
+    color: 'white',
+    marginTop: 10,
+  },
 });
 
 export default LoginForm;

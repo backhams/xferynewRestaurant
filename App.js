@@ -11,6 +11,7 @@ import CustomerProfile from "./src/components/CustomerProfile";
 import requestLocationPermission from './src/components/PermissionLocation';
 import EditRestaurant from './src/components/EditRestaurant';
 import UploadMenu from './src/components/UploadMenu';
+import MenuManager from './src/components/MenuManager';
 
 export default function App() {
   const Stack = createNativeStackNavigator();
@@ -41,6 +42,7 @@ export default function App() {
       <Stack.Screen name="CustomerProfile" component={CustomerProfile} />
       <Stack.Screen name="EditRestaurant" component={EditRestaurant} />
       <Stack.Screen name="UploadMenu" component={UploadMenu} />
+      <Stack.Screen name="MenuManager" component={MenuManager} />
     </Stack.Navigator>
   </NavigationContainer>
   );
