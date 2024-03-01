@@ -51,53 +51,9 @@ const MenuPage = () => {
     fetchData();
   }, []);
 
-  const toggleSearch = () => {
-    setSearchVisible(!searchVisible);
-  };
-
   return (
     <View style={styles.container}>
       {/* Top Navbar */}
-      <View style={styles.navbar}>
-        {/* Left side of Navbar */}
-        <TouchableOpacity onPress={toggleSearch}>
-          <FontAwesome name="search" size={25} color="black" />
-        </TouchableOpacity>
-        {/* Center (Empty for now) */}
-        <View style={{ flex: 1 }} />
-        {/* Right side of Navbar (Bottom Navigation Buttons) */}
-        <View style={styles.navbarRight}>
-          <TouchableOpacity style={styles.navbarButton}>
-            <FontAwesome name="home" size={25} color="black" />
-            <Text style={styles.navbarButtonText}>Home</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.navbarButton}>
-            <FontAwesome name="user" size={25} color="black" />
-            <Text style={styles.navbarButtonText}>Profile</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.navbarButton}>
-            <FontAwesome name="bell" size={25} color="black" />
-            <Text style={styles.navbarButtonText}>Notification</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Search Input (conditionally rendered) */}
-      {searchVisible && (
-        <View style={{ paddingHorizontal: 20, paddingTop: 20 }}>
-          <TextInput
-            style={{ borderWidth: 1, borderColor: 'gray', borderRadius: 5, padding: 10 }}
-            placeholder="Search..."
-          />
-        </View>
-      )}
-
-      {/* Display user name and email */}
-      <View style={styles.userInfoContainer}>
-        <Text style={styles.userInfoText}>Name: {userInfo.name}</Text>
-        <Text style={styles.userInfoText}>Email: {userInfo.email}</Text>
-        <Text style={styles.userInfoText}>role: {userInfo.role}</Text>
-      </View>
 
       {/* Bottom Navigation Buttons */}
       <BottomMenu />
@@ -109,32 +65,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  navbar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 40,
-  },
-  navbarRight: {
-    flexDirection: 'row',
-  },
-  navbarButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 20,
-  },
-  navbarButtonText: {
-    marginLeft: 5,
-  },
-  userInfoContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-  },
-  userInfoText: {
-    fontSize: 16,
-    marginBottom: 5,
-  }
 });
 
 export default MenuPage;

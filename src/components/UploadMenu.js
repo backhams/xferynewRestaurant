@@ -78,7 +78,6 @@ export default function UploadMenu() {
   };
   const handleUpload = async () => {
     setLoading(true);
-    // const reference = storage().ref();
     // Check if all required fields are present
     if (!selectedImage || !title || !price || !comparePrice) {
       setLoading(false);
@@ -144,7 +143,7 @@ export default function UploadMenu() {
         const decodedToken = await decodeToken();
         if(decodedToken){
           const userEmail = await decodedToken.email;
-          const responseOfAccount = await fetch(`http://192.168.20.86:5000/getAccount?email=${userEmail}`, {
+          const responseOfAccount = await fetch(`http://192.168.1.6:5000/getAccount?email=${userEmail}`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json'
@@ -155,7 +154,7 @@ export default function UploadMenu() {
           if (responseOfAccount.ok) {
             const accountData = await responseOfAccount.json();
             console.log('API Response:', accountData);
-          const response = await fetch(`http://192.168.20.86:5000/menuUpload`, {
+          const response = await fetch(`http://192.168.1.6:5000/menuUpload`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'

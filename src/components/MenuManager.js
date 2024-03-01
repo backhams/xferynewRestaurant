@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Alert, Image, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { useFocusEffect,useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { decodeToken } from './LoginToken';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Tooltip from 'react-native-walkthrough-tooltip';
@@ -10,12 +10,10 @@ import ModalSpin from './ModalSpin';
 export default function MenuManager() {
     const navigation = useNavigation();
     const [menus, setMenus] = useState([]);
-    console.log(menus.url)
-    const [selectedMenu, setSelectedMenu] = useState(null); // Track the selected menu for the tooltip
-    const [tooltipVisible, setTooltipVisible] = useState(false); // Track the visibility of the tooltip
+    const [selectedMenu, setSelectedMenu] = useState(null);
+    const [tooltipVisible, setTooltipVisible] = useState(false);
     const [refreshPage, setRefreshPage] = useState(false);
-    const [loading,setLoading] = useState(false);
-
+    const [loading, setLoading] = useState(false);
 
     useFocusEffect(
         React.useCallback(() => {
@@ -24,7 +22,7 @@ export default function MenuManager() {
                     const decodedToken = await decodeToken();
                     if (decodedToken) {
                         const userEmail = decodedToken.email;
-                        const response = await fetch(`http://192.168.20.86:5000/fetchMenu?email=${userEmail}`, {
+                        const response = await fetch(`http://192.168.1.6:5000/fetchMenu?email=${userEmail}`, {
                             method: 'GET',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -57,52 +55,42 @@ export default function MenuManager() {
     const deleteMenu = async (menuId) => {
         try {
             setLoading(true);
-    
-            // Find the menu item with the matching ID
+
             const menuToDelete = menus.find(menu => menu._id === menuId);
             if (!menuToDelete) {
                 console.error('Menu not found');
                 return;
             }
-    
-            // Access the URL property of the menu item
+
             const menuUrl = menuToDelete.url;
-            console.log('Menu URL:', menuUrl);
-    
-            // Continue with the deletion process
+
             const storageRef = storage().refFromURL(menuUrl);
             await storageRef.delete();
             console.log('File deleted successfully');
-    
-            // Proceed with the API call as the Firebase storage deletion is successful
-            const response = await fetch(`http://192.168.20.86:5000/deleteMenu?id=${menuId}`, {
+
+            const response = await fetch(`http://192.168.1.6:5000/deleteMenu?id=${menuId}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json'
                 }
             });
-    
+
             if (response.ok) {
-                // Trigger page refresh
                 setRefreshPage(prevState => !prevState);
                 const data = await response.json();
                 console.log("API call successful:", data);
             } else {
-                // Handle failed API call
                 Alert.alert("Failed to delete");
             }
         } catch (error) {
             console.error("Error deleting menu from Firebase storage:", error);
             Alert.alert("Failed to delete");
         } finally {
-            // Regardless of success or failure, hide the loading indicator
             setLoading(false);
         }
-    
+
         console.log("Menu deleted:", menuId);
     };
-    
-
 
     const handleDeleteMenu = (menuId) => {
         Alert.alert(
@@ -139,56 +127,70 @@ export default function MenuManager() {
         }
     };
 
-
-    // Function to navigate to MenuDetails screen
-  const navigateToMenuDetails = (menu) => {
-    navigation.navigate('MenuDetails',{
-        menu
-    }); // Navigate to MenuDetails screen
-  };
-
+    const navigateToMenuDetails = (menu) => {
+        navigation.navigate('MenuDetails', {
+            menu
+        });
+    };
 
     return (
-        <ScrollView>
-            <View style={styles.container}>
-                {sortedMenus.map((menu, index) => (
-                    <View key={index} style={styles.menuItem}>
-                         <TouchableOpacity onPress={() => navigateToMenuDetails(menu)}> 
-                        <View style={styles.itemContainer}>
-                            <Image source={{ uri: menu.url }} style={styles.image} />
-                            <Text numberOfLines={2} ellipsizeMode="tail" style={styles.title}>{menu.title}</Text>
-                            <Text style={styles.price}>₹{menu.price}</Text>
-                            <Text style={styles.price}>status:{menu.status}</Text>
-                            <Tooltip
-                                isVisible={tooltipVisible && selectedMenu === menu}
-                                content={(
-                                    <View style={{ padding: 10 }}>
-                                        <TouchableOpacity onPress={() => handleDeleteMenu(menu._id)}>
-                                            <Text style={styles.deleteText}>Delete</Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                )}
-                                placement="top" // Adjust as needed
-                                onClose={() => {
-                                    setSelectedMenu(null);
-                                    setTooltipVisible(false);
-                                }}
-                            >
-                                <View style={styles.iconContainer}>
-                                    <Icon name="dots-vertical" size={20} color="#000" onPress={() => toggleTooltip(menu)} />
-                                </View>
-                            </Tooltip>
-                        </View>
-                        </TouchableOpacity>
-                    </View>
-                ))}
+        <View style={{ flex: 1 }}>
+            <View style={styles.navbar}>
+                <TouchableOpacity onPress={() => navigation.goBack()}>
+                    <Icon name="arrow-left" size={30} color="#000" style={{ marginRight: 10 }} />
+                </TouchableOpacity>
+                <Text style={{ fontSize: 20, fontWeight: 'bold' }}>Menu Manager ({menus.length})</Text>
             </View>
-            <ModalSpin loading={loading} loadingText={"Deleting"}/>
-        </ScrollView>
+            <ScrollView style={{ flex: 1 }}>
+                <View style={styles.container}>
+                    {sortedMenus.map((menu, index) => (
+                        <View key={index} style={styles.menuItem}>
+                            <TouchableOpacity onPress={() => navigateToMenuDetails(menu)}>
+                                <View style={styles.itemContainer}>
+                                    <Image source={{ uri: menu.url }} style={styles.image} />
+                                    <Text numberOfLines={2} ellipsizeMode="tail" style={styles.title}>{menu.title}</Text>
+                                    <Text style={styles.price}>₹{menu.price}</Text>
+                                    <Text style={styles.price}>status:{menu.status}</Text>
+                                    <Tooltip
+                                        isVisible={tooltipVisible && selectedMenu === menu}
+                                        content={(
+                                            <View style={{ padding: 10 }}>
+                                                <TouchableOpacity onPress={() => handleDeleteMenu(menu._id)}>
+                                                    <Text style={styles.deleteText}>Delete</Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                        )}
+                                        placement="top"
+                                        onClose={() => {
+                                            setSelectedMenu(null);
+                                            setTooltipVisible(false);
+                                        }}
+                                    >
+                                        <View style={styles.iconContainer}>
+                                            <Icon name="dots-vertical" size={20} color="#000" onPress={() => toggleTooltip(menu)} />
+                                        </View>
+                                    </Tooltip>
+                                </View>
+                            </TouchableOpacity>
+                        </View>
+                    ))}
+                </View>
+            </ScrollView>
+            <ModalSpin loading={loading} loadingText={"Deleting"} />
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
+    navbar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 10,
+        paddingVertical: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#ccc',
+        marginBottom: 70
+    },
     container: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -216,12 +218,12 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         marginTop: 10,
-        color:"black"
+        color: "black"
     },
     price: {
         fontSize: 16,
         marginTop: 5,
-        color:"black"
+        color: "black"
     },
     iconContainer: {
         position: 'absolute',
