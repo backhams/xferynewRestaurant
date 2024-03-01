@@ -62,7 +62,7 @@ export default function RestaurantDashboard() {
         const userEmail = decodedToken.email;
 
         // Proceed with API call using userEmail
-        const response = await fetch(`http://192.168.1.6:5000/restaurantProfileData?email=${userEmail}`, {
+        const response = await fetch(`http://192.168.181.86:5000/restaurantProfileData?email=${userEmail}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

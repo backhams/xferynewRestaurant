@@ -99,7 +99,7 @@ export default function MenuDetails() {
 
         try {
             // Make the API call to update the menu
-            const response = await fetch('http://192.168.1.6:5000/updateMenu', {
+            const response = await fetch('http://192.168.181.86:5000/updateMenu', {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
