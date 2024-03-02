@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, TouchableOpacity, Text, StyleSheet, Image, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { View, TextInput, TouchableOpacity, Text, StyleSheet, Image, Alert, ActivityIndicator, ScrollView, RefreshControl } from 'react-native';
 import EvilIcons from 'react-native-vector-icons/EvilIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { decodeToken, userRole } from './LoginToken';
 import BottomMenu from './BottomMenu';
 import getCurrentLocation from './Location';
+import { createShimmerPlaceholder } from 'react-native-shimmer-placeholder'
+import LinearGradient from 'react-native-linear-gradient'
+const ShimmerPlaceholder = createShimmerPlaceholder(LinearGradient)
 
 const MenuPage = () => {
   const [searchVisible, setSearchVisible] = useState(false);
@@ -18,7 +21,7 @@ const MenuPage = () => {
   const [fetchingMore, setFetchingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [errorType, setErrorType] = useState(null);
-  console.log(errorType)
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -40,73 +43,74 @@ const MenuPage = () => {
     };
   }, []);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const decodedToken = await decodeToken();
-        if (decodedToken) {
-          const role = await userRole();
-          setUserInfo({ name: decodedToken.name, email: decodedToken.email, role: role });
-        }
-  
-        setLoading(true);
-  
-        const response = await fetch(`http://192.168.1.5:5000/nearbySearch?page=${page}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-  
-        if (response.ok) {
-          const data = await response.json();
-          if (data.length > 0) {
-            setMenu(prevMenu => [...prevMenu, ...data]);
-          } else {
-            setHasMore(false); // No more pages to fetch
-          }
-        } else {
-          setMenu("no response");
-        }
-      } catch (error) {
-        if (error instanceof TypeError && error.message === 'Network request failed') {
-          setErrorType('network');
-        } else {
-          setErrorType('server');
-        }
-        Alert.alert(error.message)
-      } finally {
-        setLoading(false);
-        setFetchingMore(false);
+
+  const fetchData = async () => {
+    try {
+      const decodedToken = await decodeToken();
+      if (decodedToken) {
+        const role = await userRole();
+        setUserInfo({ name: decodedToken.name, email: decodedToken.email, role: role });
       }
-    };
-  
+
+      setLoading(true);
+
+      const response = await fetch(`http://192.168.221.86:5000/nearbySearch?page=${page}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.length > 0) {
+          setMenu(data);
+        } else {
+          setHasMore(false); // No more pages to fetch
+        }
+      } else {
+        setMenu("no response");
+      }
+    } catch (error) {
+      if (error instanceof TypeError && error.message === 'Network request failed') {
+        setErrorType('network');
+      } else {
+        setErrorType('server');
+      }
+      Alert.alert(error.message)
+    } finally {
+      setLoading(false);
+      setFetchingMore(false);
+    }
+  };
+
+  useEffect(() => {
+
     fetchData();
-  
+
     return () => {
       // Cleanup function if needed
     };
-  }, []); // Include 'page' as a dependency if it's used inside the effect
-  
-  
+  }, []);
+
+
 
   const handleLoadMore = async () => {
     if (!loading && !fetchingMore && hasMore) {
       setFetchingMore(true);
       setPage(prevPage => {
         const updatedPage = prevPage + 1;
-        console.log('Updated Page:', updatedPage); // Log the updated page number
         return updatedPage;
       });
-  
+
       try {
-        const response = await fetch(`http://192.168.1.5:5000/nearbySearch?page=${page + 1}`, { // Use page + 1 directly
+        const response = await fetch(`http://192.168.221.86:5000/nearbySearch?page=${page + 1}`, { // Use page + 1 directly
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
           },
         });
-  
+
         if (response.ok) {
           const data = await response.json();
           if (data.length > 0) {
@@ -125,6 +129,14 @@ const MenuPage = () => {
     }
   };
 
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+  }, []);
+
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -142,6 +154,12 @@ const MenuPage = () => {
           }
         }}
         scrollEventThrottle={0}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+          />
+        }
       >
         {/* Top Navbar */}
         <Text style={{ color: "gray" }}>GOOD FOOD GOOD HEALTH</Text>
@@ -183,11 +201,97 @@ const MenuPage = () => {
           ) : errorType === 'server' ? (
             <Text style={styles.loadingText}>Server Error. Please try again later.</Text>
           ) : (
-            <Text style={styles.loadingText}>Searching...</Text>
+            <View style={{ marginTop: 20 }}>
+              <ShimmerPlaceholder
+                style={{ borderRadius: 5 }}
+                width={100}
+                height={20}
+              />
+              <ShimmerPlaceholder
+                style={{ borderRadius: 10, marginTop: 10 }}
+                width={370}
+                height={200}
+              />
+              <ShimmerPlaceholder
+                style={{ borderRadius: 5, marginTop: 20 }}
+                width={100}
+                height={20}
+              />
+              <View style={{ flexDirection: "row", justifyContent: "space-evenly", marginTop: 10 }}>
+                <ShimmerPlaceholder
+                  style={{ borderRadius: 100 }}
+                  height={70}
+                  width={70}
+                />
+                <ShimmerPlaceholder
+                  style={{ borderRadius: 100 }}
+                  height={70}
+                  width={70}
+                />
+                <ShimmerPlaceholder
+                  style={{ borderRadius: 100 }}
+                  height={70}
+                  width={70}
+                />
+                <ShimmerPlaceholder
+                  style={{ borderRadius: 100 }}
+                  height={70}
+                  width={70}
+                />
+              </View>
+              <View style={{ flexDirection: "row", justifyContent: "space-evenly", marginTop: 10 }}>
+                <ShimmerPlaceholder height={20} width={50} style={{ borderRadius: 5 }} />
+                <ShimmerPlaceholder height={20} width={50} style={{ borderRadius: 5 }} />
+                <ShimmerPlaceholder height={20} width={50} style={{ borderRadius: 5 }} />
+                <ShimmerPlaceholder height={20} width={50} style={{ borderRadius: 5 }} />
+              </View>
+              <View style={{ marginTop: 10 }}>
+                <ShimmerPlaceholder
+                  style={{ borderRadius: 10, marginTop: 10 }}
+                  width={370}
+                  height={200}
+                />
+                <ShimmerPlaceholder height={20} width={300} style={{ borderRadius: 5, marginTop: 5 }} />
+                <ShimmerPlaceholder height={20} width={100} style={{ borderRadius: 5, marginTop: 5 }} />
+                <ShimmerPlaceholder height={20} width={110} style={{ borderRadius: 5, marginTop: 5 }} />
+                <ShimmerPlaceholder
+                  style={{ borderRadius: 10, marginTop: 10 }}
+                  width={370}
+                  height={200}
+                />
+                <ShimmerPlaceholder height={20} width={300} style={{ borderRadius: 5, marginTop: 5 }} />
+                <ShimmerPlaceholder height={20} width={100} style={{ borderRadius: 5, marginTop: 5 }} />
+                <ShimmerPlaceholder height={20} width={110} style={{ borderRadius: 5, marginTop: 5 }} />
+                <ShimmerPlaceholder
+                  style={{ borderRadius: 10, marginTop: 10 }}
+                  width={370}
+                  height={200}
+                />
+                <ShimmerPlaceholder height={20} width={300} style={{ borderRadius: 5, marginTop: 5 }} />
+                <ShimmerPlaceholder height={20} width={100} style={{ borderRadius: 5, marginTop: 5 }} />
+                <ShimmerPlaceholder height={20} width={110} style={{ borderRadius: 5, marginTop: 5 }} />
+                <ShimmerPlaceholder
+                  style={{ borderRadius: 10, marginTop: 10 }}
+                  width={370}
+                  height={200}
+                />
+                <ShimmerPlaceholder height={20} width={300} style={{ borderRadius: 5, marginTop: 5 }} />
+                <ShimmerPlaceholder height={20} width={100} style={{ borderRadius: 5, marginTop: 5 }} />
+                <ShimmerPlaceholder height={20} width={110} style={{ borderRadius: 5, marginTop: 5 }} />
+                <ShimmerPlaceholder
+                  style={{ borderRadius: 10, marginTop: 10 }}
+                  width={370}
+                  height={200}
+                />
+                <ShimmerPlaceholder height={20} width={300} style={{ borderRadius: 5, marginTop: 5 }} />
+                <ShimmerPlaceholder height={20} width={100} style={{ borderRadius: 5, marginTop: 5 }} />
+                <ShimmerPlaceholder height={20} width={110} style={{ borderRadius: 5, marginTop: 5 }} />
+              </View>
+            </View>
           )
         ) : errorType === 'network' ? (
           <Text style={styles.loadingText}>Please check your internet connection and try again.</Text>
-        ) :menu === "no response" ? (
+        ) : menu === "no response" ? (
           <Text style={styles.loadingText}>Server Error. Please try again later.</Text>
         ) : menu.length === 0 ? (
           <Text style={styles.loadingText}>No menu found</Text>
@@ -234,7 +338,7 @@ const MenuPage = () => {
             </View>
 
             {/* menu section */}
-            <View>
+            <View style={{ marginTop: 25 }}>
               {menu.map((item, index) => (
                 <View style={styles.menuItem} key={item._id}>
                   <Image source={{ uri: item.url }} style={styles.menuItemImage} />
@@ -284,11 +388,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginTop: 10,
+    color: "black"
   },
   menuItemPrice: {
     fontSize: 16,
     fontWeight: 'bold',
     marginRight: 5,
+    color: "black"
   },
   menuItemRestaurant: {
     fontSize: 14,
@@ -297,6 +403,26 @@ const styles = StyleSheet.create({
   loading: {
     alignItems: 'center',
     marginVertical: 10,
+  },
+  loadingText: {
+    color: "black"
+  },
+  stickyHeader: {
+    position: 'sticky',
+    top: 0,
+    zIndex: 100,
+    elevation: 2,
+    backgroundColor: 'white',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'lightgray',
+  },
+  button: {
+    backgroundColor: "#FE5301",
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 15,
+    marginLeft: 'auto', // Pushes the button to the right
   },
 });
 
