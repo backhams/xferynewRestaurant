@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, TouchableOpacity, Text, StyleSheet, Dimensions, Image, Alert,FlatList } from 'react-native';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import { View, TextInput, TouchableOpacity, Text, StyleSheet, Image, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import EvilIcons from 'react-native-vector-icons/EvilIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { decodeToken, userRole } from './LoginToken';
 import BottomMenu from './BottomMenu';
-import getCurrentLocation, { clearLiveLocation } from './Location';
+import getCurrentLocation from './Location';
 
 const MenuPage = () => {
   const [searchVisible, setSearchVisible] = useState(false);
@@ -15,182 +14,257 @@ const MenuPage = () => {
   const [longitude, setLongitude] = useState(null);
   const [page, setPage] = useState(1);
   const [menu, setMenu] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [fetchingMore, setFetchingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [errorType, setErrorType] = useState(null);
+  console.log(errorType)
 
-  useFocusEffect(() => {
+  useEffect(() => {
     const fetchData = async () => {
       try {
-        // Call getCurrentLocation to get the current latitude and longitude
         const { latitude, longitude } = await getCurrentLocation();
-
-        // Now you can use latitude and longitude here
-        setLatitude(latitude)
-        setLongitude(longitude)
+        setLatitude(latitude);
+        setLongitude(longitude);
         console.log('Latitude:', latitude);
         console.log('Longitude:', longitude);
-
-        // Do something with latitude and longitude here...
       } catch (error) {
         console.error('Error getting current location:', error);
       }
     };
 
-    fetchData(); // Call the fetchData function when the component gains focus
+    fetchData();
 
     return () => {
       // Cleanup function if needed
     };
-  });
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
-      const decodedToken = await decodeToken();
-      if (decodedToken) {
-        // Calling userRole function to get the role value
-        const role = await userRole();
-        setUserInfo({ name: decodedToken.name, email: decodedToken.email, role: role });
+      try {
+        const decodedToken = await decodeToken();
+        if (decodedToken) {
+          const role = await userRole();
+          setUserInfo({ name: decodedToken.name, email: decodedToken.email, role: role });
+        }
+  
+        setLoading(true);
+  
+        const response = await fetch(`http://192.168.1.5:5000/nearbySearch?page=${page}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+  
+        if (response.ok) {
+          const data = await response.json();
+          if (data.length > 0) {
+            setMenu(prevMenu => [...prevMenu, ...data]);
+          } else {
+            setHasMore(false); // No more pages to fetch
+          }
+        } else {
+          setMenu("no response");
+        }
+      } catch (error) {
+        if (error instanceof TypeError && error.message === 'Network request failed') {
+          setErrorType('network');
+        } else {
+          setErrorType('server');
+        }
+        Alert.alert(error.message)
+      } finally {
+        setLoading(false);
+        setFetchingMore(false);
       }
     };
-
+  
     fetchData();
-  }, []);
+  
+    return () => {
+      // Cleanup function if needed
+    };
+  }, []); // Include 'page' as a dependency if it's used inside the effect
+  
+  
 
-  useFocusEffect(
-    React.useCallback(() => {
-        const fetchMenu = async () => {
-            try {
-              
-                    const response = await fetch(`http://192.168.181.86:5000/nearbySearch?page=${page}`, {
-                        method: 'GET',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                    });
-                    if(response.ok){
-
-                      const data = await response.json();
-                      setMenu(data);
-                      console.log(data)
-                    } else{
-                      Alert.alert("failed")
-                    }
-            } catch (error) {
-                console.error('Error fetching data:', error);
-            }
-        };
-
-        fetchMenu();
-
-        return () => {
-            // Cleanup function if needed
-        };
-    }, [])
-);
-
-
-const renderItem = ({ item }) => (
-  <View style={styles.menuItem}>
-    <Image source={{ uri: item.url }} style={styles.menuItemImage} />
-    <Text style={styles.menuItemTitle}>{item.title}</Text>
-    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-      <Text style={styles.menuItemPrice}>{item.price}</Text>
-      <Text style={styles.menuItemRestaurant}>{item.restaurantName}</Text>
-    </View>
-  </View>
-);
+  const handleLoadMore = async () => {
+    if (!loading && !fetchingMore && hasMore) {
+      setFetchingMore(true);
+      setPage(prevPage => {
+        const updatedPage = prevPage + 1;
+        console.log('Updated Page:', updatedPage); // Log the updated page number
+        return updatedPage;
+      });
+  
+      try {
+        const response = await fetch(`http://192.168.1.5:5000/nearbySearch?page=${page + 1}`, { // Use page + 1 directly
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+  
+        if (response.ok) {
+          const data = await response.json();
+          if (data.length > 0) {
+            setMenu(prevMenu => [...prevMenu, ...data]);
+          } else {
+            setHasMore(false); // No more pages to fetch
+          }
+        } else {
+          throw new Error('Failed to fetch menu');
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setFetchingMore(false);
+      }
+    }
+  };
 
   return (
     <View style={styles.container}>
-      {/* Top Navbar */}
-      <Text style={{ color: "gray" }}>GOOD FOOD GOOD HEALTH</Text>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-        <Text style={{ color: "black", fontSize: 25, fontWeight: "bold", marginTop: 10 }}>Xfery Food</Text>
-        <Text style={{ color: "black" }}>Hi, Backham</Text>
-      </View>
-      <View style={{ flexDirection: "row", flexWrap: 'wrap', marginTop: 10 }}>
-        <View style={{
-          flex: 1, // Take up remaining space
-          color: "black",
-          backgroundColor: "#DDDDDD",
-          marginRight: 10,
-          borderRadius: 10,
-          flexDirection: "row",
-          alignItems: "center"
-        }}>
-          <EvilIcons style={{ marginLeft: 15 }} color="black" name="search" size={25} />
-          <TextInput
-            style={{
-              marginHorizontal: 0,
-              color: "black"
-            }}
-            placeholderTextColor={"gray"}
-            placeholder='Search by menu or Restaurant'
-          />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        style={{ flex: 1 }}
+        onScroll={({ nativeEvent }) => {
+          const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+          const paddingToBottom = 20;
+          if (
+            layoutMeasurement.height + contentOffset.y >=
+            contentSize.height - paddingToBottom
+          ) {
+            // Load more data when scrolled to the bottom
+            handleLoadMore();
+          }
+        }}
+        scrollEventThrottle={0}
+      >
+        {/* Top Navbar */}
+        <Text style={{ color: "gray" }}>GOOD FOOD GOOD HEALTH</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <Text style={{ color: "black", fontSize: 25, fontWeight: "bold", marginTop: 10 }}>Xfery Food</Text>
+          <Text style={{ color: "black" }}>Hi, Backham</Text>
         </View>
-        <TouchableOpacity style={styles.button}>
-          <View style={{ marginHorizontal: 30 }}>
-            <Text>Search</Text>
+        <View style={{ flexDirection: "row", flexWrap: 'wrap', marginTop: 10 }}>
+          <View style={{
+            flex: 1,
+            color: "black",
+            backgroundColor: "#DDDDDD",
+            marginRight: 10,
+            borderRadius: 10,
+            flexDirection: "row",
+            alignItems: "center"
+          }}>
+            <EvilIcons style={{ marginLeft: 15 }} color="black" name="search" size={25} />
+            <TextInput
+              style={{
+                marginHorizontal: 0,
+                color: "black"
+              }}
+              placeholderTextColor={"gray"}
+              placeholder='Search by menu or Restaurant'
+            />
           </View>
-        </TouchableOpacity>
-      </View>
-
-      {/* sponsored section */}
-      <View style={{ marginTop: 20 }}>
-        <Text style={{ color: "black", fontWeight: "700" }}>sponsored</Text>
-        <View style={{ alignItems: 'center', marginTop: 10 }}>
-          <Image
-            source={{ uri: 'https://d1csarkz8obe9u.cloudfront.net/posterpreviews/burger-food-banner-template-design-66bfd460d3a4b90f273ba25ec12bec6d_screen.jpg?ts=1698822899' }}
-            style={{ width: 370, height: 200, borderRadius: 10 }}
-          />
+          <TouchableOpacity style={styles.button}>
+            <View style={{ marginHorizontal: 30 }}>
+              <Text>Search</Text>
+            </View>
+          </TouchableOpacity>
         </View>
-      </View>
 
-      {/* Categories section */}
-      <View style={{ marginTop: 20}}>
-        <Text style={{ color: "black", fontWeight: "700" }}>Categories</Text>
-        <View style={{flexDirection:"row",justifyContent:"space-evenly",marginTop:10}}>
-        <Image
-            source={{ uri: 'https://d1csarkz8obe9u.cloudfront.net/posterpreviews/burger-food-banner-template-design-66bfd460d3a4b90f273ba25ec12bec6d_screen.jpg?ts=1698822899' }}
-            style={{ width: 70, height: 70, borderRadius:100 }}
-          />
-        <Image
-            source={{ uri: 'https://wallpapersmug.com/download/1600x900/b67e3e/pizza-slices-food.jpg' }}
-            style={{ width: 70, height: 70, borderRadius:100 }}
-          />
-        <Image
-            source={{ uri: 'https://as1.ftcdn.net/v2/jpg/06/70/83/54/1000_F_670835408_sq2wwLy7SdxSmDbpo7SFrAA39E5Pqsp6.jpg' }}
-            style={{ width: 70, height: 70, borderRadius:100 }}
-          />
-        <Image
-            source={{ uri: 'https://d1csarkz8obe9u.cloudfront.net/posterpreviews/burger-food-banner-template-design-66bfd460d3a4b90f273ba25ec12bec6d_screen.jpg?ts=1698822899' }}
-            style={{ width: 70, height: 70, borderRadius:100 }}
-          />
-        </View>
-        <View style={{flexDirection:"row",justifyContent:"space-evenly",marginTop:10}}>
-          <Text style={{color:"black"}}>Burger</Text>
-          <Text style={{color:"black"}}>Pizza</Text>
-          <Text style={{color:"black"}}>Chow</Text>
-          <Text style={{color:"black"}}>Momos</Text>
-        </View>
-      </View>
+        {/* Render different text based on loading state */}
+        {loading ? (
+          errorType === 'network' ? (
+            <Text style={styles.loadingText}>Please check your internet connection and try again.</Text>
+          ) : errorType === 'server' ? (
+            <Text style={styles.loadingText}>Server Error. Please try again later.</Text>
+          ) : (
+            <Text style={styles.loadingText}>Searching...</Text>
+          )
+        ) : errorType === 'network' ? (
+          <Text style={styles.loadingText}>Please check your internet connection and try again.</Text>
+        ) :menu === "no response" ? (
+          <Text style={styles.loadingText}>Server Error. Please try again later.</Text>
+        ) : menu.length === 0 ? (
+          <Text style={styles.loadingText}>No menu found</Text>
+        ) : (
+          <View>
+            {/* sponsored section */}
+            <View style={{ marginTop: 20 }}>
+              <Text style={{ color: "black", fontWeight: "700" }}>sponsored</Text>
+              <View style={{ alignItems: 'center', marginTop: 10 }}>
+                <Image
+                  source={{ uri: 'https://d1csarkz8obe9u.cloudfront.net/posterpreviews/burger-food-banner-template-design-66bfd460d3a4b90f273ba25ec12bec6d_screen.jpg?ts=1698822899' }}
+                  style={{ width: 370, height: 200, borderRadius: 10 }}
+                />
+              </View>
+            </View>
 
+            {/* Categories section */}
+            <View style={{ marginTop: 20 }}>
+              <Text style={{ color: "black", fontWeight: "700" }}>Categories</Text>
+              <View style={{ flexDirection: "row", justifyContent: "space-evenly", marginTop: 10 }}>
+                <Image
+                  source={{ uri: 'https://d1csarkz8obe9u.cloudfront.net/posterpreviews/burger-food-banner-template-design-66bfd460d3a4b90f273ba25ec12bec6d_screen.jpg?ts=1698822899' }}
+                  style={{ width: 70, height: 70, borderRadius: 100 }}
+                />
+                <Image
+                  source={{ uri: 'https://wallpapersmug.com/download/1600x900/b67e3e/pizza-slices-food.jpg' }}
+                  style={{ width: 70, height: 70, borderRadius: 100 }}
+                />
+                <Image
+                  source={{ uri: 'https://as1.ftcdn.net/v2/jpg/06/70/83/54/1000_F_670835408_sq2wwLy7SdxSmDbpo7SFrAA39E5Pqsp6.jpg' }}
+                  style={{ width: 70, height: 70, borderRadius: 100 }}
+                />
+                <Image
+                  source={{ uri: 'https://d1csarkz8obe9u.cloudfront.net/posterpreviews/burger-food-banner-template-design-66bfd460d3a4b90f273ba25ec12bec6d_screen.jpg?ts=1698822899' }}
+                  style={{ width: 70, height: 70, borderRadius: 100 }}
+                />
+              </View>
+              <View style={{ flexDirection: "row", justifyContent: "space-evenly", marginTop: 10 }}>
+                <Text style={{ color: "black" }}>Burger</Text>
+                <Text style={{ color: "black" }}>Pizza</Text>
+                <Text style={{ color: "black" }}>Chow</Text>
+                <Text style={{ color: "black" }}>Momos</Text>
+              </View>
+            </View>
 
-      {/* menu section */}
-      <FlatList
-        data={menu}
-        renderItem={renderItem}
-        keyExtractor={(item, index) => item._id.toString()} // assuming you have unique IDs for menu items
-      />
-
+            {/* menu section */}
+            <View>
+              {menu.map((item, index) => (
+                <View style={styles.menuItem} key={item._id}>
+                  <Image source={{ uri: item.url }} style={styles.menuItemImage} />
+                  <Text style={styles.menuItemTitle}>{item.title}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Text style={styles.menuItemPrice}>{item.price}</Text>
+                    <Text style={styles.menuItemRestaurant}>{item.restaurantName}</Text>
+                  </View>
+                </View>
+              ))}
+              {fetchingMore && (
+                <View style={styles.loading}>
+                  <ActivityIndicator size="large" color="#0000ff" />
+                </View>
+              )}
+            </View>
+          </View>
+        )}
+      </ScrollView>
       {/* Bottom Navigation Buttons */}
       <BottomMenu />
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     marginTop: 30,
-    marginHorizontal: 10
+    marginHorizontal: 10,
   },
   button: {
     backgroundColor: "#FE5301",
@@ -202,8 +276,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   menuItemImage: {
-    width: 370, // Adjust according to your design
-    height: 200, // Adjust according to your design
+    width: 370,
+    height: 200,
     borderRadius: 10,
   },
   menuItemTitle: {
@@ -220,7 +294,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'gray',
   },
+  loading: {
+    alignItems: 'center',
+    marginVertical: 10,
+  },
 });
-
 
 export default MenuPage;
