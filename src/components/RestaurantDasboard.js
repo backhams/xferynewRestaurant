@@ -10,12 +10,147 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Chart from './Chart';
 import ChartOptions from './ChartOptions';
 import MenuManager from './MenuManager';
+import BackgroundService from 'react-native-background-actions';
+import io from 'socket.io-client';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import ModalSpin from './ModalSpin';
+
+
 export default function RestaurantDashboard() {
   const navigation = useNavigation();
   const [userInfo, setUserInfo] = useState({ name: '', email: '', role: '', image: '' });
   const [selectedOption, setSelectedOption] = useState("Today");
   const [isSwitchOn, setIsSwitchOn] = useState(false);
+  const [socket, setSocket] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [responseText, setResponseText] = useState('');
 
+
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const backgroundTaskState = await AsyncStorage.getItem('backgroundTaskState');
+      setIsSwitchOn(backgroundTaskState === 'true');
+    };
+
+    fetchData();
+  }, []);
+
+  const startBackgroundService = async () => {
+    const options = {
+      taskName: 'Example',
+      taskTitle: 'xferyfood',
+      taskDesc: 'The restaurant is now online and actively accepting orders',
+      taskIcon: {
+        name: 'ic_launcher',
+        type: 'mipmap',
+      },
+      color: '#ff00ff',
+      linkingURI: 'yourSchemeHere://chat/jane', // See Deep Linking for more info
+    };
+
+    await BackgroundService.start(veryIntensiveTask, options);
+    await BackgroundService.updateNotification({ taskDesc: 'Running in background to track location' });
+  };
+
+  const stopBackgroundService = async () => {
+    await BackgroundService.stop();
+    if (socket) {
+      socket.disconnect();
+    }
+  };
+  const sleep = (time) => new Promise((resolve) => setTimeout(() => resolve(), time));
+  const veryIntensiveTask = async () => {
+    setLoading(true)
+    const socket = io('http://192.168.1.2:5000/');
+    socket.on('connect', () => {
+      console.log('Connected to server');
+      // Call cacheRestaurant after establishing connection
+
+      cacheRestaurant();
+    });
+    setSocket(socket);
+    // send restaurant data to server for active cache
+    const cacheRestaurant = async () => {
+
+      try {
+        const decodedToken = await decodeToken();
+        if (decodedToken) {
+          const userEmail = await decodedToken.email;
+          const responseOfAccount = await fetch(`http://192.168.1.2:5000/getAccount?email=${userEmail}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+        
+          if(responseOfAccount.ok){
+            const accountData = await responseOfAccount.json();
+            const { latitude, longitude, email } = accountData;
+        
+            const response = await fetch('http://192.168.1.2:5000/cache-restaurant-status', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({latitude, longitude, email}),
+            });
+        
+            if (response.ok) {
+              console.log('Restaurant data sent successfully.');
+              // Handle response if needed
+              // Save the background task state to AsyncStorage
+            await AsyncStorage.setItem('backgroundTaskState', String(true));
+            setLoading(false)
+            setResponseText("Restaurant Online now")
+            setTimeout(() => {
+              setLoading(false);
+              setResponseText('');
+          }, 2000);
+              
+            } else {
+              Alert.alert(response.message)
+              // Handle error appropriately
+              setLoading(false)
+              setIsSwitchOn(false);
+            }
+          }
+        }
+        
+
+
+      } catch (error) {
+        Alert.alert(error.message)
+        // Handle error appropriately
+        setLoading(false)
+        setIsSwitchOn(false);
+      }
+    };
+
+
+    while (BackgroundService.isRunning()) {
+      // Handle incoming messages
+      socket.on('message', (data) => {
+        console.log('Received message:', data);
+      });
+      await sleep(1000); // Wait for 10 seconds
+    }
+  };
+
+  const handleToggle = async (isOn) => {
+    setIsSwitchOn(isOn);
+    try {
+      if (isOn) {
+        await startBackgroundService();
+      } else {
+        await stopBackgroundService();
+        await AsyncStorage.removeItem('backgroundTaskState');
+      }
+    } catch (error) {
+      console.error('Error handling toggle:', error);
+      setIsSwitchOn(false);
+    }
+  };
   // Sample data for each time period
   const todayData = {
     labels: ["9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM"],
@@ -62,7 +197,7 @@ export default function RestaurantDashboard() {
         const userEmail = decodedToken.email;
 
         // Proceed with API call using userEmail
-        const response = await fetch(`http://192.168.1.8:5000/restaurantProfileData?email=${userEmail}`, {
+        const response = await fetch(`http://192.168.1.4:5000/restaurantProfileData?email=${userEmail}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -84,11 +219,6 @@ export default function RestaurantDashboard() {
       console.error('Error:', error);
       // Handle errors if necessary
     }
-  };
-
-  const handleToggle = (isOn) => {
-    setIsSwitchOn(isOn);
-    console.log("changed to : ", isOn);
   };
 
   return (
@@ -120,7 +250,7 @@ export default function RestaurantDashboard() {
           <AntDesign name="shoppingcart" size={24} color="black" />
           <Text style={styles.menuText}>Orders</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem} onPress={()=>{navigation.navigate("MenuManager")}}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => { navigation.navigate("MenuManager") }}>
           <AntDesign name="menuunfold" size={24} color="black" />
           <Text style={styles.menuText}>Menu Manager</Text>
         </TouchableOpacity>
@@ -147,6 +277,7 @@ export default function RestaurantDashboard() {
       </View>
 
       <BottomMenu />
+      <ModalSpin loading={loading} loadingText={"Activating Restaurant"} responseText={responseText} />
     </View>
   );
 }
