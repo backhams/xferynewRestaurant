@@ -62,7 +62,7 @@ export default function RestaurantDashboard() {
   const sleep = (time) => new Promise((resolve) => setTimeout(() => resolve(), time));
   const veryIntensiveTask = async () => {
     setLoading(true)
-    const socket = io('http://192.168.1.2:5000/');
+    const socket = io('http://192.168.221.86:5000/');
     socket.on('connect', () => {
       console.log('Connected to server');
       // Call cacheRestaurant after establishing connection
@@ -77,7 +77,7 @@ export default function RestaurantDashboard() {
         const decodedToken = await decodeToken();
         if (decodedToken) {
           const userEmail = await decodedToken.email;
-          const responseOfAccount = await fetch(`http://192.168.1.2:5000/getAccount?email=${userEmail}`, {
+          const responseOfAccount = await fetch(`http://192.168.221.86:5000/getAccount?email=${userEmail}`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json'
@@ -88,7 +88,7 @@ export default function RestaurantDashboard() {
             const accountData = await responseOfAccount.json();
             const { latitude, longitude, email } = accountData;
         
-            const response = await fetch('http://192.168.1.2:5000/cache-restaurant-status', {
+            const response = await fetch('http://192.168.221.86:5000/cache-restaurant-status', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -136,7 +136,29 @@ export default function RestaurantDashboard() {
       await sleep(1000); // Wait for 10 seconds
     }
   };
-
+  const deactivateRestaurant = async () => {
+    try {
+      const decodedToken = await decodeToken();
+      if (decodedToken) {
+        const userEmail = decodedToken.email;
+  
+        // Make a DELETE request to remove the cached document based on email
+        await fetch(`http://192.168.221.86:5000/remove-restaurant/${userEmail}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+  
+        // Since we're not expecting any response, we don't need to handle anything here
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      // If an error occurs, just log it, no need to notify the user or change state
+    }
+  };
+  
+  
   const handleToggle = async (isOn) => {
     setIsSwitchOn(isOn);
     try {
@@ -144,6 +166,7 @@ export default function RestaurantDashboard() {
         await startBackgroundService();
       } else {
         await stopBackgroundService();
+        deactivateRestaurant();
         await AsyncStorage.removeItem('backgroundTaskState');
       }
     } catch (error) {
@@ -197,7 +220,7 @@ export default function RestaurantDashboard() {
         const userEmail = decodedToken.email;
 
         // Proceed with API call using userEmail
-        const response = await fetch(`http://192.168.1.4:5000/restaurantProfileData?email=${userEmail}`, {
+        const response = await fetch(`http://192.168.221.86:5000/restaurantProfileData?email=${userEmail}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

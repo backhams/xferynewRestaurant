@@ -23,38 +23,44 @@ const MenuPage = () => {
   const [errorType, setErrorType] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const { latitude, longitude } = await getCurrentLocation();
-        setLatitude(latitude);
-        setLongitude(longitude);
-        console.log('Latitude:', latitude);
-        console.log('Longitude:', longitude);
-      } catch (error) {
-        console.error('Error getting current location:', error);
-      }
-    };
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     try {
+  //       const { latitude, longitude } = await getCurrentLocation();
+  //       setLatitude(latitude);
+  //       setLongitude(longitude);
+  //       console.log('Latitude:', latitude);
+  //       console.log('Longitude:', longitude);
+  //     } catch (error) {
+  //       console.error('Error getting current location:', error);
+  //     }
+  //   };
 
-    fetchData();
+  //   fetchData();
 
-    return () => {
-      // Cleanup function if needed
-    };
-  }, []);
+  //   return () => {
+  //     // Cleanup function if needed
+  //   };
+  // }, []);
 
 
   const fetchData = async () => {
     try {
+      const { latitude, longitude } = await getCurrentLocation();
+        setLatitude(latitude);
+        setLongitude(longitude);
+        console.log('Latitude:', latitude);
+        console.log('Longitude:', longitude);
       const decodedToken = await decodeToken();
-      if (decodedToken) {
+      if (decodedToken && latitude && longitude) {
+        
         const role = await userRole();
         setUserInfo({ name: decodedToken.name, email: decodedToken.email, role: role });
       }
 
       setLoading(true);
 
-      const response = await fetch(`http://192.168.1.2:5000/nearbySearch?page=${page}`, {
+      const response = await fetch(`http://192.168.221.86:5000/nearbySearch?page=${page}&latitude=${latitude}&longitude=${longitude}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -104,7 +110,7 @@ const MenuPage = () => {
       });
 
       try {
-        const response = await fetch(`http://192.168.1.2:5000/nearbySearch?page=${page + 1}`, { // Use page + 1 directly
+        const response = await fetch(`http://192.168.221.86:5000/nearbySearch?page=${page}&latitude=${latitude}&longitude=${longitude}`, { // Use page + 1 directly
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
