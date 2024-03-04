@@ -10,6 +10,7 @@ export default function MenuDetails() {
 
     // Initialize state variables directly from route params
     const [title, setTitle] = useState(menu.title);
+    const [description, setDescription] = useState(menu.description);
     const [initialTitle, setInitialTitle] = useState(menu.title); // Store initial title
     const [price, setPrice] = useState(menu.price.toString());
     const [initialPrice, setInitialPrice] = useState(menu.price.toString()); // Store initial price
@@ -18,6 +19,7 @@ export default function MenuDetails() {
     const [percentageOff, setPercentageOff] = useState(0); // State to hold the percentage off value
     const [priceError, setPriceError] = useState('');
     const [titleError, setTitleError] = useState('');
+    const [descriptionError, setDescriptionError] = useState('');
     const [comparePriceError, setComparePriceError] = useState('');
     const [loading, setLoading] = useState(false);
     const [responseText, setResponseText] = useState('');
@@ -50,7 +52,7 @@ export default function MenuDetails() {
         // Set loading state to true when starting the update process
         setLoading(true);
         // Check if all required fields are present
-        if (!title || !price || !comparePrice) {
+        if (!title || !description || !price || !comparePrice) {
             setLoading(false);
             Alert.alert(
                 'Missing Fields',
@@ -62,17 +64,39 @@ export default function MenuDetails() {
         }
 
         // Check title length
-        if (title.length > 85) {
+        if (title.length > 30) {
             setLoading(false);
             Alert.alert(
                 'Title Too Long',
-                'Title length cannot exceed 85 characters.',
+                'Title length cannot exceed 30 characters.',
                 [{ text: 'OK', onPress: () => console.log('OK Pressed') }],
                 { cancelable: false }
             );
             return;
         }
 
+        // Check description length
+        if (description.length > 250) {
+            setLoading(false);
+            Alert.alert(
+                'description Too Long',
+                'Description length cannot exceed 250 characters.',
+                [{ text: 'OK', onPress: () => console.log('OK Pressed') }],
+                { cancelable: false }
+            );
+            return;
+        }
+        // Check title length
+        if (description.length < 100) {
+            setLoading(false);
+            Alert.alert(
+                'description Too Short',
+                'Description length should be more then 100 characters.',
+                [{ text: 'OK', onPress: () => console.log('OK Pressed') }],
+                { cancelable: false }
+            );
+            return;
+        }
         // Check price
         if (Number(price) < 90) {
             setLoading(false);
@@ -99,13 +123,14 @@ export default function MenuDetails() {
 
         try {
             // Make the API call to update the menu
-            const response = await fetch('http://192.168.181.86:5000/updateMenu', {
+            const response = await fetch('http://192.168.221.86:5000/updateMenu', {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
                     title,
+                    description,
                     price,
                     comparePrice,
                     id: menu._id // Provide the ID of the menu you want to update
@@ -115,14 +140,14 @@ export default function MenuDetails() {
             // Check if the request was successful
             if (!response.ok) {
                 throw new Error('Failed to update menu');
-            } else{
-                 // Simulate API call delay
-            setResponseText('Data updated successfully.');
-            setTimeout(() => {
-                setLoading(false);
-                setResponseText('');
-                navigation.navigate("MenuManager")
-            }, 3000);
+            } else {
+                // Simulate API call delay
+                setResponseText('Data updated successfully.');
+                setTimeout(() => {
+                    setLoading(false);
+                    setResponseText('');
+                    navigation.navigate("MenuManager")
+                }, 3000);
             }
         } catch (error) {
             Alert.alert(error.message)
@@ -132,10 +157,21 @@ export default function MenuDetails() {
 
     const handleTitleChange = (text) => {
         setTitle(text);
-        if (text.length > 85) {
-            setTitleError('Title length cannot exceed 85 characters.');
+        if (text.length > 30) {
+            setTitleError('Title length cannot exceed 30 characters.');
         } else {
             setTitleError('');
+        }
+    };
+
+    const handleDescriptionChange = (text) => {
+        setDescription(text);
+        if (text.length > 250) {
+            setDescriptionError('Description length cannot exceed 250 characters.');
+        } else if (text.length < 100) {
+            setDescriptionError('Description length should be more then 100 characters.');
+        } else {
+            setDescriptionError('');
         }
     };
 
@@ -184,6 +220,18 @@ export default function MenuDetails() {
                         />
                         {titleError ? (
                             <Text style={styles.errorText}>{titleError}</Text>
+                        ) : null}
+                        <Text style={styles.label}>Description</Text>
+                        <TextInput
+                            style={[styles.input, { width: inputWidth }]}
+                            value={description}
+                            onChangeText={handleDescriptionChange}
+                            placeholder="Enter Description"
+                            placeholderTextColor="black"
+                            onSubmitEditing={() => { updateMenu() }}
+                        />
+                        {descriptionError ? (
+                            <Text style={styles.errorText}>{descriptionError}</Text>
                         ) : null}
                         <Text style={styles.label}>Price ₹</Text>
                         <TextInput

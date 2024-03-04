@@ -13,12 +13,15 @@ export default function UploadMenu() {
   const navigation = useNavigation();
   const [selectedImage, setSelectedImage] = useState(null);
   const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [comparePrice, setComparePrice] = useState('');
   const [priceError, setPriceError] = useState('');
   const [titleError, setTitleError] = useState('');
+  const [descriptionError, setDescriptionError] = useState('');
   const [comparePriceError, setComparePriceError] = useState('');
   const [titleTooltipVisible, setTitleTooltipVisible] = useState(false);
+  const [descriptionTooltipVisible, setDescriptionTooltipVisible] = useState(false);
   const [ImageRulesTooltipVisible, setImageRulesTooltipVisible] = useState(false);
   const [priceTooltipVisible, setPriceTooltipVisible] = useState(false);
   const [comparePriceTooltipVisible, setComparePriceTooltipVisible] = useState(false);
@@ -79,7 +82,7 @@ export default function UploadMenu() {
   const handleUpload = async () => {
     setLoading(true);
     // Check if all required fields are present
-    if (!selectedImage || !title || !price || !comparePrice) {
+    if (!selectedImage || !title || !description || !price || !comparePrice) {
       setLoading(false);
       Alert.alert(
         'Missing Fields',
@@ -91,11 +94,33 @@ export default function UploadMenu() {
     }
   
     // Check title length
-    if (title.length > 85) {
+    if (title.length > 30) {
       setLoading(false);
       Alert.alert(
         'Title Too Long',
-        'Title length cannot exceed 85 characters.',
+        'Title length cannot exceed 30 characters.',
+        [{ text: 'OK', onPress: () => console.log('OK Pressed') }],
+        { cancelable: false }
+      );
+      return;
+    }
+    // Check description length
+    if (description.length > 250) {
+      setLoading(false);
+      Alert.alert(
+        'description Too Long',
+        'Description length cannot exceed 250 characters.',
+        [{ text: 'OK', onPress: () => console.log('OK Pressed') }],
+        { cancelable: false }
+      );
+      return;
+    }
+    // Check title length
+    if (description.length < 100) {
+      setLoading(false);
+      Alert.alert(
+        'description Too Short',
+        'Description length should be more then 100 characters.',
         [{ text: 'OK', onPress: () => console.log('OK Pressed') }],
         { cancelable: false }
       );
@@ -115,11 +140,11 @@ export default function UploadMenu() {
     }
   
     // Check compare price
-    if (Number(comparePrice) < 130) {
+    if (Number(comparePrice) < price) {
       setLoading(false);
       Alert.alert(
         'Invalid Compare Price',
-        'Compare Price must be at least ₹ 130.',
+        'Compare Price must be more then actual price.',
         [{ text: 'OK', onPress: () => console.log('OK Pressed') }],
         { cancelable: false }
       );
@@ -143,7 +168,7 @@ export default function UploadMenu() {
         const decodedToken = await decodeToken();
         if(decodedToken){
           const userEmail = await decodedToken.email;
-          const responseOfAccount = await fetch(`http://192.168.1.8:5000/getAccount?email=${userEmail}`, {
+          const responseOfAccount = await fetch(`http://192.168.221.86:5000/getAccount?email=${userEmail}`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json'
@@ -154,13 +179,14 @@ export default function UploadMenu() {
           if (responseOfAccount.ok) {
             const accountData = await responseOfAccount.json();
             console.log('API Response:', accountData);
-          const response = await fetch(`http://192.168.1.8:5000/menuUpload`, {
+          const response = await fetch(`http://192.168.221.86:5000/menuUpload`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
               title:title,
+              description:description,
               price:price,
               comparePrice:comparePrice,
               email:accountData.email,
@@ -213,10 +239,20 @@ export default function UploadMenu() {
 
   const handleTitleChange = (text) => {
     setTitle(text);
-    if (text.length > 85) {
-      setTitleError('Title length cannot exceed 85 characters.');
+    if (text.length > 30) {
+      setTitleError('Title length cannot exceed 30 characters.');
     } else {
       setTitleError('');
+    }
+  };
+  const handleDescriptionChange = (text) => {
+    setDescription(text);
+    if (text.length > 250) {
+      setDescriptionError('Description length cannot exceed 250 characters.');
+    } else if(text.length < 100){
+      setDescriptionError('Description length should be more then 100 characters.');
+    } else {
+      setDescriptionError('');
     }
   };
 
@@ -231,8 +267,8 @@ export default function UploadMenu() {
 
   const handleComparePriceChange = (text) => {
     setComparePrice(text);
-    if (Number(text) < 90) {
-      setComparePriceError('Compare Price must be at least ₹ 130.');
+    if (Number(text) < price) {
+      setComparePriceError('Compare Price must be more then actual price.');
     } else {
       setComparePriceError('');
     }
@@ -352,6 +388,50 @@ export default function UploadMenu() {
         />
 
         {titleError ? <Text style={styles.errorText}>{titleError}</Text> : null}
+        <Tooltip
+          isVisible={descriptionTooltipVisible}
+          content={<Text style={{color:"black"}}>
+          Menu Description Policy:
+          
+          Clarity and Brevity: Keep descriptions concise, ideally 100-150 characters, ensuring quick comprehension.
+          
+          Highlight Ingredients: Emphasize main ingredients for flavor insight.
+          
+          Include Preparation Method: Briefly outline how the dish is cooked.
+          
+          Flavor Profile: Use descriptive language to convey taste.
+          
+          Origin or Inspiration: Mention culinary influences if applicable.
+          
+          Special Features: Highlight unique aspects or dietary accommodations.
+          
+          Consistency: Maintain a uniform tone, style, and length across all descriptions.
+          
+          Example for Chow:
+          
+          "Spicy Szechuan Chicken Stir-Fry: Fiery wok-tossed chicken with crisp veggies. Authentic heat and flavor in every bite! 🌶️ #SzechuanSpice"</Text>}
+          placement="bottom"
+          onClose={() => setDescriptionTooltipVisible(false)}
+        >
+          <Feather
+            style={styles.infoIcon}
+            name="info"
+            size={20}
+            color="gray"
+            onPress={() => setDescriptionTooltipVisible(true)}
+          />
+        </Tooltip>
+        <TextInput
+          placeholder="Menu Description"
+          value={description}
+          onChangeText={handleDescriptionChange}
+          style={[styles.input, { height: Math.max(40, title.length > 85 ? 60 : 40) }]}
+          multiline={true}
+          numberOfLines={3}
+          editable={!loading}
+        />
+
+        {descriptionError ? <Text style={styles.errorText}>{descriptionError}</Text> : null}
 
         <Tooltip
           isVisible={priceTooltipVisible}
@@ -466,7 +546,6 @@ const styles = StyleSheet.create({
     color:"black"
   },
   form: {
-    marginTop: 70,
     paddingHorizontal: 20,
   },
   input: {

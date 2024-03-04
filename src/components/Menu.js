@@ -60,7 +60,7 @@ const MenuPage = () => {
 
       setLoading(true);
 
-      const response = await fetch(`http://192.168.1.5:5000/nearbySearch?page=${page}&latitude=${latitude}&longitude=${longitude}`, {
+      const response = await fetch(`http://192.168.221.86:5000/nearbySearch?page=${page}&latitude=${latitude}&longitude=${longitude}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -110,7 +110,7 @@ const MenuPage = () => {
       });
 
       try {
-        const response = await fetch(`http://192.168.1.5:5000/nearbySearch?page=${page + 1}&latitude=${latitude}&longitude=${longitude}`, { // Use page + 1 directly
+        const response = await fetch(`http://192.168.221.86:5000/nearbySearch?page=${page + 1}&latitude=${latitude}&longitude=${longitude}`, { // Use page + 1 directly
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -143,11 +143,49 @@ const MenuPage = () => {
   }, []);
 
   const handleItemClick = (item) => {
+    // Calculate distance
+    const distanceInfo = calculateDistance(latitude, longitude, item.latitude, item.longitude);
+  
     // Navigate to FullMenu page and send data via route params
     navigation.navigate('FullMenu', {
-      item
+      item,
+      distance: distanceInfo.distance,
+      unit: distanceInfo.unit
     });
   }
+  
+
+  // Function to calculate distance between two coordinates using Haversine formula
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Radius of the Earth in kilometers
+    const dLat = deg2rad(lat2 - lat1);
+    const dLon = deg2rad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c; // Distance in kilometers
+
+    // Determine appropriate unit
+    let unit;
+    let displayDistance;
+    if (distance < 1) {
+      // Convert distance to meters
+      displayDistance = (distance * 1000).toFixed(0);
+      unit = 'm';
+    } else {
+      displayDistance = distance.toFixed(2);
+      unit = 'km';
+    }
+
+    return { distance: displayDistance, unit };
+  };
+
+  // Function to convert degrees to radians
+  const deg2rad = (deg) => {
+    return deg * (Math.PI / 180);
+  };
   return (
     <View style={styles.container}>
       <ScrollView
@@ -369,11 +407,16 @@ const MenuPage = () => {
                     </View>
 
                     <Text style={styles.menuItemTitle}>{item.title}</Text>
-                      <Text style={{marginHorizontal:10, marginTop:5}}>Indulge in our mouthwatering Angus beef burger, expertly seasoned and grilled to perfection, served alongside.</Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 10,marginTop:10 }}>
+                    <Text style={{ marginHorizontal: 10, marginTop: 5 }}>{item.description}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 10, marginTop: 10 }}>
                       <Text style={styles.menuItemPrice}>₹ {item.price}</Text>
                       <Text style={styles.menuItemRestaurant}>{item.restaurantName}</Text>
-                      <Text style={styles.menuItemRestaurant}>3km Away</Text>
+                      {/* <Text style={styles.menuItemRestaurant}>3km Away</Text> */}
+                      <Text style={styles.menuItemRestaurant}>
+                        {calculateDistance(latitude, longitude, item.latitude, item.longitude).distance}{' '}
+                        {calculateDistance(latitude, longitude, item.latitude, item.longitude).unit} Away
+                      </Text>
+
                     </View>
                   </TouchableOpacity>
                 );
@@ -441,7 +484,7 @@ const styles = StyleSheet.create({
   menuItemRestaurant: {
     fontSize: 14,
     color: 'gray',
-    marginLeft:20
+    marginLeft: 20
   },
   loading: {
     alignItems: 'center',
