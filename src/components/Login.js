@@ -58,7 +58,7 @@ const LoginForm = ({ route }) => {
   
     try {
       setLoading(true);
-      const response = await fetch('http://192.168.221.86:5000/register', {
+      const response = await fetch('http://192.168.1.5:5000/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

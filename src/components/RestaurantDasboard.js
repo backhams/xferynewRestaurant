@@ -62,7 +62,7 @@ export default function RestaurantDashboard() {
   const sleep = (time) => new Promise((resolve) => setTimeout(() => resolve(), time));
   const veryIntensiveTask = async () => {
     setLoading(true)
-    const socket = io('http://192.168.221.86:5000/');
+    const socket = io('http://192.168.1.5:5000/');
     socket.on('connect', () => {
       console.log('Connected to server');
       // Call cacheRestaurant after establishing connection
@@ -77,7 +77,7 @@ export default function RestaurantDashboard() {
         const decodedToken = await decodeToken();
         if (decodedToken) {
           const userEmail = await decodedToken.email;
-          const responseOfAccount = await fetch(`http://192.168.221.86:5000/getAccount?email=${userEmail}`, {
+          const responseOfAccount = await fetch(`http://192.168.1.5:5000/getAccount?email=${userEmail}`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json'
@@ -86,14 +86,15 @@ export default function RestaurantDashboard() {
         
           if(responseOfAccount.ok){
             const accountData = await responseOfAccount.json();
-            const { latitude, longitude, email } = accountData;
+            const email = await accountData.email;
+            console.log(email)
         
-            const response = await fetch('http://192.168.221.86:5000/cache-restaurant-status', {
+            const response = await fetch('http://192.168.1.5:5000/cache-restaurant-status', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
               },
-              body: JSON.stringify({latitude, longitude, email}),
+              body: JSON.stringify({email}),
             });
         
             if (response.ok) {
@@ -109,7 +110,7 @@ export default function RestaurantDashboard() {
           }, 2000);
               
             } else {
-              Alert.alert(response.message)
+              await stopBackgroundService();
               // Handle error appropriately
               setLoading(false)
               setIsSwitchOn(false);
@@ -121,7 +122,9 @@ export default function RestaurantDashboard() {
 
       } catch (error) {
         Alert.alert(error.message)
+        await stopBackgroundService();
         // Handle error appropriately
+        console.log(error)
         setLoading(false)
         setIsSwitchOn(false);
       }
@@ -143,7 +146,7 @@ export default function RestaurantDashboard() {
         const userEmail = decodedToken.email;
   
         // Make a DELETE request to remove the cached document based on email
-        await fetch(`http://192.168.221.86:5000/remove-restaurant/${userEmail}`, {
+        await fetch(`http://192.168.1.5:5000/remove-restaurant/${userEmail}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
@@ -220,7 +223,7 @@ export default function RestaurantDashboard() {
         const userEmail = decodedToken.email;
 
         // Proceed with API call using userEmail
-        const response = await fetch(`http://192.168.221.86:5000/restaurantProfileData?email=${userEmail}`, {
+        const response = await fetch(`http://192.168.1.5:5000/restaurantProfileData?email=${userEmail}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

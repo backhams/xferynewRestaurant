@@ -47,20 +47,20 @@ const MenuPage = () => {
   const fetchData = async () => {
     try {
       const { latitude, longitude } = await getCurrentLocation();
-        setLatitude(latitude);
-        setLongitude(longitude);
-        console.log('Latitude:', latitude);
-        console.log('Longitude:', longitude);
+      setLatitude(latitude);
+      setLongitude(longitude);
+      console.log('Latitude:', latitude);
+      console.log('Longitude:', longitude);
       const decodedToken = await decodeToken();
       if (decodedToken && latitude && longitude) {
-        
+
         const role = await userRole();
         setUserInfo({ name: decodedToken.name, email: decodedToken.email, role: role });
       }
 
       setLoading(true);
 
-      const response = await fetch(`http://192.168.221.86:5000/nearbySearch?page=${page}&latitude=${latitude}&longitude=${longitude}`, {
+      const response = await fetch(`http://192.168.1.5:5000/nearbySearch?page=${page}&latitude=${latitude}&longitude=${longitude}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -110,7 +110,7 @@ const MenuPage = () => {
       });
 
       try {
-        const response = await fetch(`http://192.168.221.86:5000/nearbySearch?page=${page}&latitude=${latitude}&longitude=${longitude}`, { // Use page + 1 directly
+        const response = await fetch(`http://192.168.1.5:5000/nearbySearch?page=${page + 1}&latitude=${latitude}&longitude=${longitude}`, { // Use page + 1 directly
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -142,7 +142,12 @@ const MenuPage = () => {
     setRefreshing(false);
   }, []);
 
-
+  const handleItemClick = (item) => {
+    // Navigate to FullMenu page and send data via route params
+    navigation.navigate('FullMenu', {
+      item
+    });
+  }
   return (
     <View style={styles.container}>
       <ScrollView
@@ -345,16 +350,34 @@ const MenuPage = () => {
 
             {/* menu section */}
             <View style={{ marginTop: 25 }}>
-              {menu.map((item, index) => (
-                <View style={styles.menuItem} key={item._id}>
-                  <Image source={{ uri: item.url }} style={styles.menuItemImage} />
-                  <Text style={styles.menuItemTitle}>{item.title}</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={styles.menuItemPrice}>{item.price}</Text>
-                    <Text style={styles.menuItemRestaurant}>{item.restaurantName}</Text>
-                  </View>
-                </View>
-              ))}
+              {menu.map((item, index) => {
+                // Calculate discount percentage
+                const discountPercentage = ((item.comparePrice - item.price) / item.comparePrice) * 100;
+
+                return (
+                  <TouchableOpacity
+                    style={styles.menuItem}
+                    key={item._id}
+                    onPress={() => handleItemClick(item)}
+                    activeOpacity={0.8}
+                  >
+                    {/* Image */}
+                    <Image source={{ uri: item.url }} style={styles.menuItemImage} />
+                    {/* Discount percentage */}
+                    <View style={styles.discountContainer}>
+                      <Text style={styles.discountText}>{discountPercentage.toFixed(2)}% OFF</Text>
+                    </View>
+
+                    <Text style={styles.menuItemTitle}>{item.title}</Text>
+                      <Text style={{marginHorizontal:10, marginTop:5}}>Indulge in our mouthwatering Angus beef burger, expertly seasoned and grilled to perfection, served alongside.</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 10,marginTop:10 }}>
+                      <Text style={styles.menuItemPrice}>₹ {item.price}</Text>
+                      <Text style={styles.menuItemRestaurant}>{item.restaurantName}</Text>
+                      <Text style={styles.menuItemRestaurant}>3km Away</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
               {fetchingMore && (
                 <View style={styles.loading}>
                   <ActivityIndicator size="large" color="#0000ff" />
@@ -387,14 +410,27 @@ const styles = StyleSheet.create({
   },
   menuItemImage: {
     width: 370,
-    height: 200,
+    height: 220,
     borderRadius: 10,
+  },
+  discountContainer: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    backgroundColor: 'green',
+    padding: 5,
+    borderRadius: 5,
+  },
+  discountText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
   menuItemTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginTop: 10,
-    color: "black"
+    color: "black",
+    marginHorizontal: 10
   },
   menuItemPrice: {
     fontSize: 16,
@@ -405,6 +441,7 @@ const styles = StyleSheet.create({
   menuItemRestaurant: {
     fontSize: 14,
     color: 'gray',
+    marginLeft:20
   },
   loading: {
     alignItems: 'center',

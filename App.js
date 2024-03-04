@@ -13,6 +13,7 @@ import EditRestaurant from './src/components/EditRestaurant';
 import UploadMenu from './src/components/UploadMenu';
 import MenuManager from './src/components/MenuManager';
 import MenuDetails from './src/components/MenuDetails';
+import FullMenu from './src/components/FullMenu';
 
 export default function App() {
   const Stack = createNativeStackNavigator();
@@ -45,6 +46,7 @@ export default function App() {
       <Stack.Screen name="UploadMenu" component={UploadMenu} />
       <Stack.Screen name="MenuManager" component={MenuManager} />
       <Stack.Screen name="MenuDetails" component={MenuDetails} />
+      <Stack.Screen name="FullMenu" component={FullMenu} />
     </Stack.Navigator>
   </NavigationContainer>
   );

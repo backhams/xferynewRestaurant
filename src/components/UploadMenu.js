@@ -143,7 +143,7 @@ export default function UploadMenu() {
         const decodedToken = await decodeToken();
         if(decodedToken){
           const userEmail = await decodedToken.email;
-          const responseOfAccount = await fetch(`http://192.168.221.86:5000/getAccount?email=${userEmail}`, {
+          const responseOfAccount = await fetch(`http://192.168.1.8:5000/getAccount?email=${userEmail}`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json'
@@ -154,7 +154,7 @@ export default function UploadMenu() {
           if (responseOfAccount.ok) {
             const accountData = await responseOfAccount.json();
             console.log('API Response:', accountData);
-          const response = await fetch(`http://192.168.221.86:5000/menuUpload`, {
+          const response = await fetch(`http://192.168.1.8:5000/menuUpload`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
