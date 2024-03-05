@@ -60,7 +60,7 @@ const MenuPage = () => {
 
       setLoading(true);
 
-      const response = await fetch(`http://192.168.221.86:5000/nearbySearch?page=${page}&latitude=${latitude}&longitude=${longitude}`, {
+      const response = await fetch(`http://192.168.1.6:5000/nearbySearch?page=${page}&latitude=${latitude}&longitude=${longitude}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -110,7 +110,7 @@ const MenuPage = () => {
       });
 
       try {
-        const response = await fetch(`http://192.168.221.86:5000/nearbySearch?page=${page + 1}&latitude=${latitude}&longitude=${longitude}`, { // Use page + 1 directly
+        const response = await fetch(`http://192.168.1.6:5000/nearbySearch?page=${page + 1}&latitude=${latitude}&longitude=${longitude}`, { // Use page + 1 directly
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -411,7 +411,7 @@ const MenuPage = () => {
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 10, marginTop: 10 }}>
                       <Text style={styles.menuItemPrice}>₹ {item.price}</Text>
                       <Text style={styles.menuItemRestaurant}>{item.restaurantName}</Text>
-                      {/* <Text style={styles.menuItemRestaurant}>3km Away</Text> */}
+                      <Text style={styles.menuItemRestaurant}>{item.activeStatus}</Text>
                       <Text style={styles.menuItemRestaurant}>
                         {calculateDistance(latitude, longitude, item.latitude, item.longitude).distance}{' '}
                         {calculateDistance(latitude, longitude, item.latitude, item.longitude).unit} Away
@@ -473,7 +473,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 10,
     color: "black",
-    marginHorizontal: 10
+    marginHorizontal: 10 
   },
   menuItemPrice: {
     fontSize: 16,
