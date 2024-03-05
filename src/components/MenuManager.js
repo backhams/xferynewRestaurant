@@ -22,7 +22,7 @@ export default function MenuManager() {
                     const decodedToken = await decodeToken();
                     if (decodedToken) {
                         const userEmail = decodedToken.email;
-                        const response = await fetch(`http://192.168.221.86:5000/fetchMenu?email=${userEmail}`, {
+                        const response = await fetch(`http://192.168.72.86:5000/fetchMenu?email=${userEmail}`, {
                             method: 'GET',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -68,7 +68,7 @@ export default function MenuManager() {
             await storageRef.delete();
             console.log('File deleted successfully');
 
-            const response = await fetch(`http://192.168.221.86:5000/deleteMenu?id=${menuId}`, {
+            const response = await fetch(`http://192.168.72.86:5000/deleteMenu?id=${menuId}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json'

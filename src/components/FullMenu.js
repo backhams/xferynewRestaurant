@@ -15,6 +15,35 @@ console.log(averageRating)
   // Calculate discount percentage
   const discountPercentage = Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100);
 
+
+   // Function to handle place order
+   const handlePlaceOrder = async () => {
+    // Your API endpoint URL
+    const apiUrl = 'http://192.168.72.86:5000/checkRestaurantActiveStatus';
+
+    try {
+      // Make API call
+      const response = await fetch(`${apiUrl}?email=${encodeURIComponent(item.email)}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add any additional headers if required
+        },
+      });
+
+      if (response.ok) {
+        // If response is okay, navigate to next page
+        // navigation.navigate('NextPage', { item: item });
+        console.log("ok")
+      } else {
+        // Handle other cases, e.g., show an error message
+        console.log('Failed to place order');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
   return (
     <View style={styles.container}>
       {/* Navbar */}
@@ -84,7 +113,7 @@ console.log(averageRating)
       </Modal>
 
       {/* Bottom Menu */}
-      <TouchableOpacity style={styles.bottomMenu}>
+      <TouchableOpacity style={styles.bottomMenu} onPress={handlePlaceOrder}>
         <Text style={styles.orderButton}>Place Order</Text>
       </TouchableOpacity>
     </View>
@@ -114,7 +143,7 @@ const styles = StyleSheet.create({
   },
   image: {
     width: '100%',
-    height: 300,
+    height: 250,
     resizeMode: 'cover',
   },
   title: {
