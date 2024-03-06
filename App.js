@@ -14,6 +14,7 @@ import UploadMenu from './src/components/UploadMenu';
 import MenuManager from './src/components/MenuManager';
 import MenuDetails from './src/components/MenuDetails';
 import FullMenu from './src/components/FullMenu';
+import CompleteOrder from './src/components/CompleteOrder';
 
 export default function App() {
   const Stack = createNativeStackNavigator();
@@ -47,6 +48,7 @@ export default function App() {
       <Stack.Screen name="MenuManager" component={MenuManager} />
       <Stack.Screen name="MenuDetails" component={MenuDetails} />
       <Stack.Screen name="FullMenu" component={FullMenu} />
+      <Stack.Screen name="CompleteOrder" component={CompleteOrder} />
     </Stack.Navigator>
   </NavigationContainer>
   );

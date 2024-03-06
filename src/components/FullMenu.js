@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, TextInput, Modal } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
 import { Rating } from 'react-native-ratings';
 
 export default function FullMenu({ route, navigation }) {
@@ -19,7 +19,7 @@ console.log(averageRating)
    // Function to handle place order
    const handlePlaceOrder = async () => {
     // Your API endpoint URL
-    const apiUrl = 'http://192.168.72.86:5000/checkRestaurantActiveStatus';
+    const apiUrl = 'http://192.168.1.5:5000/checkRestaurantActiveStatus';
 
     try {
       // Make API call
@@ -30,15 +30,14 @@ console.log(averageRating)
           // Add any additional headers if required
         },
       });
-
       if (response.ok) {
-        // If response is okay, navigate to next page
-        // navigation.navigate('NextPage', { item: item });
-        console.log("ok")
-      } else {
+        navigation.navigate('CompleteOrder', { item: item });
+    } else {
         // Handle other cases, e.g., show an error message
         console.log('Failed to place order');
-      }
+        Alert.alert('Failed to place order');
+        console.log(data)
+    }
     } catch (error) {
       console.error('Error:', error);
     }
