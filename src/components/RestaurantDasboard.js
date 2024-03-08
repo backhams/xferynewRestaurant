@@ -16,14 +16,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import ModalSpin from './ModalSpin';
 import NetInfo from "@react-native-community/netinfo";
 
-
+let globalsocket = null; 
 
 export default function RestaurantDashboard() {
   const navigation = useNavigation();
   const [userInfo, setUserInfo] = useState({ name: '', email: '', role: '', image: '' });
   const [selectedOption, setSelectedOption] = useState("Today");
   const [isSwitchOn, setIsSwitchOn] = useState(false);
-  const [socket, setSocket] = useState(null);
   const [loading, setLoading] = useState(false);
   const [responseText, setResponseText] = useState('');
 
@@ -68,10 +67,10 @@ export default function RestaurantDashboard() {
 
   const stopBackgroundService = async () => {
     await BackgroundService.stop();
-    if (socket) {
-      console.log(socket)
-      socket.disconnect();
-      setSocket(null); // Update socket state to null
+    if (globalsocket) {
+      console.log(globalsocket)
+      globalsocket.disconnect();
+      // setSocket(null); // Update socket state to null
     }
   };
 
@@ -90,20 +89,16 @@ export default function RestaurantDashboard() {
       }
     };
 
-    const socket = io('http://192.168.1.2:5000/');
+    const socket = io('http://192.168.150.86:5000/');
     socket.on('connect', async () => {
       console.log('Connected to server');
       // Send initial data upon connecting
       const decodedToken = await decodeToken();
       const restaurantEmail = await decodedToken.email;
       socket.emit('connectData', restaurantEmail);
-      console.log(socket.id)
-      // Convert the object to a string
-      // await AsyncStorage.setItem("socket", JSON.stringify(socket));
-
       cacheRestaurant();
     });
-    setSocket(socket);
+    globalsocket=socket;
     // send restaurant data to server for active cache
     const cacheRestaurant = async () => {
 
@@ -111,7 +106,7 @@ export default function RestaurantDashboard() {
         const decodedToken = await decodeToken();
         if (decodedToken) {
           const userEmail = await decodedToken.email;
-          const responseOfAccount = await fetch(`http://192.168.1.2:5000/getAccount?email=${userEmail}`, {
+          const responseOfAccount = await fetch(`http://192.168.150.86:5000/getAccount?email=${userEmail}`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json'
@@ -123,7 +118,7 @@ export default function RestaurantDashboard() {
             const email = await accountData.email;
             console.log(email)
 
-            const response = await fetch('http://192.168.1.2:5000/cache-restaurant-status', {
+            const response = await fetch('http://192.168.150.86:5000/cache-restaurant-status', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -159,6 +154,7 @@ export default function RestaurantDashboard() {
         await stopBackgroundService();
         // Handle error appropriately
         console.log(error)
+        console.warn(error)
         setLoading(false)
         setIsSwitchOn(false);
       }
@@ -241,7 +237,7 @@ export default function RestaurantDashboard() {
         const userEmail = decodedToken.email;
 
         // Proceed with API call using userEmail
-        const response = await fetch(`http://192.168.1.2:5000/restaurantProfileData?email=${userEmail}`, {
+        const response = await fetch(`http://192.168.150.86:5000/restaurantProfileData?email=${userEmail}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

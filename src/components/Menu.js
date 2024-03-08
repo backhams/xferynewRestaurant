@@ -23,26 +23,6 @@ const MenuPage = () => {
   const [errorType, setErrorType] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       const { latitude, longitude } = await getCurrentLocation();
-  //       setLatitude(latitude);
-  //       setLongitude(longitude);
-  //       console.log('Latitude:', latitude);
-  //       console.log('Longitude:', longitude);
-  //     } catch (error) {
-  //       console.error('Error getting current location:', error);
-  //     }
-  //   };
-
-  //   fetchData();
-
-  //   return () => {
-  //     // Cleanup function if needed
-  //   };
-  // }, []);
-
 
   const fetchData = async () => {
     try {
@@ -60,7 +40,7 @@ const MenuPage = () => {
 
       setLoading(true);
 
-      const response = await fetch(`http://192.168.1.2:5000/nearbySearch?page=${page}&latitude=${latitude}&longitude=${longitude}`, {
+      const response = await fetch(`http://192.168.150.86:5000/nearbySearch?page=${page}&latitude=${latitude}&longitude=${longitude}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -110,7 +90,7 @@ const MenuPage = () => {
       });
 
       try {
-        const response = await fetch(`http://192.168.1.2:5000/nearbySearch?page=${page + 1}&latitude=${latitude}&longitude=${longitude}`, { // Use page + 1 directly
+        const response = await fetch(`http://192.168.150.86:5000/nearbySearch?page=${page + 1}&latitude=${latitude}&longitude=${longitude}`, { // Use page + 1 directly
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
