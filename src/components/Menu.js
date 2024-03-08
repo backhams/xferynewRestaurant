@@ -60,7 +60,7 @@ const MenuPage = () => {
 
       setLoading(true);
 
-      const response = await fetch(`http://192.168.1.5:5000/nearbySearch?page=${page}&latitude=${latitude}&longitude=${longitude}`, {
+      const response = await fetch(`http://192.168.1.2:5000/nearbySearch?page=${page}&latitude=${latitude}&longitude=${longitude}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -110,7 +110,7 @@ const MenuPage = () => {
       });
 
       try {
-        const response = await fetch(`http://192.168.1.5:5000/nearbySearch?page=${page + 1}&latitude=${latitude}&longitude=${longitude}`, { // Use page + 1 directly
+        const response = await fetch(`http://192.168.1.2:5000/nearbySearch?page=${page + 1}&latitude=${latitude}&longitude=${longitude}`, { // Use page + 1 directly
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

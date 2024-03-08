@@ -14,6 +14,8 @@ import BackgroundService from 'react-native-background-actions';
 import io from 'socket.io-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ModalSpin from './ModalSpin';
+import NetInfo from "@react-native-community/netinfo";
+
 
 
 export default function RestaurantDashboard() {
@@ -24,18 +26,28 @@ export default function RestaurantDashboard() {
   const [socket, setSocket] = useState(null);
   const [loading, setLoading] = useState(false);
   const [responseText, setResponseText] = useState('');
-  const [serverEmail, setServerEmail] = useState('');
 
 
 
   useEffect(() => {
     const fetchData = async () => {
+      // Check internet connectivity
+      const netInfoState = await NetInfo.fetch();
+      if (!netInfoState.isConnected) {
+        // If no internet connection, remove background task state and return
+        await BackgroundService.stop();
+        await AsyncStorage.removeItem('backgroundTaskState');
+        return;
+      }
+
+      // If there's internet connection, fetch background task state
       const backgroundTaskState = await AsyncStorage.getItem('backgroundTaskState');
       setIsSwitchOn(backgroundTaskState === 'true');
     };
 
     fetchData();
   }, []);
+
 
   const startBackgroundService = async () => {
     const options = {
@@ -51,36 +63,47 @@ export default function RestaurantDashboard() {
     };
 
     await BackgroundService.start(veryIntensiveTask, options);
-    await BackgroundService.updateNotification({ taskDesc: 'Running in background to track location' });
+    await BackgroundService.updateNotification({ taskDesc: 'The restaurant is now online and actively accepting orders' });
   };
 
   const stopBackgroundService = async () => {
     await BackgroundService.stop();
     if (socket) {
+      console.log(socket)
       socket.disconnect();
+      setSocket(null); // Update socket state to null
     }
   };
+
   const sleep = (time) => new Promise((resolve) => setTimeout(() => resolve(), time));
   const veryIntensiveTask = async () => {
     setLoading(true)
-    const socket = io('http://192.168.1.5:5000/');
-    socket.on('connect', () => {
+    const checkInternetAndDisconnect = async () => {
+      const netInfoState = await NetInfo.fetch();
+      if (!netInfoState.isConnected) {
+        // If no internet connection, stop the background service and return
+        await AsyncStorage.removeItem('backgroundTaskState');
+        console.log("remove")
+        await stopBackgroundService();
+        setIsSwitchOn(false)
+        return;
+      }
+    };
+
+    const socket = io('http://192.168.1.2:5000/');
+    socket.on('connect', async () => {
       console.log('Connected to server');
-      // Call cacheRestaurant after establishing connection
+      // Send initial data upon connecting
+      const decodedToken = await decodeToken();
+      const restaurantEmail = await decodedToken.email;
+      socket.emit('connectData', restaurantEmail);
+      console.log(socket.id)
+      // Convert the object to a string
+      // await AsyncStorage.setItem("socket", JSON.stringify(socket));
 
       cacheRestaurant();
     });
-
-    socket.on('restaurantStatus', (email) => {
-      // Handle the event data here
-      console.log('Restaurant Active Status:', email); 
-      const socketSentEmail = email;
-      if(socketSentEmail === "fgf" ){
-        // Emit a message back to the server
-        socket.emit('restaurantStatusResponse', 'I am active');
-      }
-    });
-    setSocket(socket); 
+    setSocket(socket);
     // send restaurant data to server for active cache
     const cacheRestaurant = async () => {
 
@@ -88,38 +111,38 @@ export default function RestaurantDashboard() {
         const decodedToken = await decodeToken();
         if (decodedToken) {
           const userEmail = await decodedToken.email;
-          const responseOfAccount = await fetch(`http://192.168.1.5:5000/getAccount?email=${userEmail}`, {
+          const responseOfAccount = await fetch(`http://192.168.1.2:5000/getAccount?email=${userEmail}`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json'
             }
           });
-        
-          if(responseOfAccount.ok){
+
+          if (responseOfAccount.ok) {
             const accountData = await responseOfAccount.json();
             const email = await accountData.email;
             console.log(email)
-        
-            const response = await fetch('http://192.168.1.5:5000/cache-restaurant-status', {
+
+            const response = await fetch('http://192.168.1.2:5000/cache-restaurant-status', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
               },
-              body: JSON.stringify({email}),
+              body: JSON.stringify({ email }),
             });
-        
+
             if (response.ok) {
               console.log('Restaurant data sent successfully.');
               // Handle response if needed
               // Save the background task state to AsyncStorage
-            await AsyncStorage.setItem('backgroundTaskState', String(true));
-            setLoading(false)
-            setResponseText("Restaurant Online now")
-            setTimeout(() => {
-              setLoading(false);
-              setResponseText('');
-          }, 2000);
-              
+              await AsyncStorage.setItem('backgroundTaskState', String(true));
+              setLoading(false)
+              setResponseText("Restaurant Online now")
+              setTimeout(() => {
+                setLoading(false);
+                setResponseText('');
+              }, 2000);
+
             } else {
               await stopBackgroundService();
               // Handle error appropriately
@@ -128,7 +151,7 @@ export default function RestaurantDashboard() {
             }
           }
         }
-        
+
 
 
       } catch (error) {
@@ -143,51 +166,28 @@ export default function RestaurantDashboard() {
 
 
     while (BackgroundService.isRunning()) {
-      // Handle incoming messages
-      // socket.on('restaurantStatus', (email) => {
-      //   setServerEmail(email)
-      //   // Handle the event data here
-      //   console.log('Restaurant Active Status:', email);
-      //   if(email){
+      await checkInternetAndDisconnect();
+      await sleep(3000); // Wait for 10 seconds
+    }
+  };
 
-      //     // Emit a message back to the server
-      // socket.emit('restaurantStatusResponse', 'I am active');
-      //   }
-      // });
-      await sleep(1000); // Wait for 10 seconds
-    }
-  };
-  const deactivateRestaurant = async () => {
-    try {
-      const decodedToken = await decodeToken();
-      if (decodedToken) {
-        const userEmail = decodedToken.email;
-  
-        // Make a DELETE request to remove the cached document based on email
-        await fetch(`http://192.168.1.5:5000/remove-restaurant/${userEmail}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-  
-        // Since we're not expecting any response, we don't need to handle anything here
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      // If an error occurs, just log it, no need to notify the user or change state
-    }
-  };
-  
-  
+
   const handleToggle = async (isOn) => {
+    // Check internet connectivity
+    const netInfoState = await NetInfo.fetch();
+    if (!netInfoState.isConnected) {
+      await AsyncStorage.removeItem('backgroundTaskState');
+      // If no internet connection, set the switch off and return
+      Alert.alert("No Internet Connection.")
+      setIsSwitchOn(false);
+      return;
+    }
     setIsSwitchOn(isOn);
     try {
       if (isOn) {
         await startBackgroundService();
       } else {
         await stopBackgroundService();
-        deactivateRestaurant();
         await AsyncStorage.removeItem('backgroundTaskState');
       }
     } catch (error) {
@@ -241,7 +241,7 @@ export default function RestaurantDashboard() {
         const userEmail = decodedToken.email;
 
         // Proceed with API call using userEmail
-        const response = await fetch(`http://192.168.1.5:5000/restaurantProfileData?email=${userEmail}`, {
+        const response = await fetch(`http://192.168.1.2:5000/restaurantProfileData?email=${userEmail}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

@@ -19,7 +19,7 @@ console.log(averageRating)
    // Function to handle place order
    const handlePlaceOrder = async () => {
     // Your API endpoint URL
-    const apiUrl = 'http://192.168.1.5:5000/checkRestaurantActiveStatus';
+    const apiUrl = 'http://192.168.1.2:5000/checkRestaurantActiveStatus';
 
     try {
       // Make API call
@@ -36,6 +36,7 @@ console.log(averageRating)
         // Handle other cases, e.g., show an error message
         console.log('Failed to place order');
         Alert.alert('Failed to place order');
+        const data = response.json();
         console.log(data)
     }
     } catch (error) {
