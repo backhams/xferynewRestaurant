@@ -18,13 +18,13 @@ export default function SignUpAs() {
       /> */}
 
       <View style={styles.linkView}>
-      <TouchableOpacity style={styles.link} onPress={() => navigation.replace('Login', { role: "restaurant" })}>
+      <TouchableOpacity style={styles.link} onPress={() => navigation.navigate('DeliveryProfile', { role: "restaurant" })}>
         <Text style={styles.linkTitle}>Sign Up As Restaurant</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.link} onPress={() => navigation.replace('Menu', { role: "deliveryPartner" })}>
+      <TouchableOpacity style={styles.link} onPress={() => navigation.replace('Login', { role: "deliveryPartner" })}>
         <Text style={styles.linkTitle} >Sign Up As Delivery Partner</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.link} onPress={()=>{navigation.replace("Login",{
+      <TouchableOpacity style={styles.link} onPress={()=>{navigation.replace("DeliveryDashboard",{
         role:"customer"
       })}}>
         <Text style={styles.linkTitle} >Sign Up As Customer</Text>

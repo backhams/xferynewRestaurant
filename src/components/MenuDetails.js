@@ -3,8 +3,10 @@ import { Text, View, StyleSheet, Image, TextInput, TouchableOpacity, Dimensions,
 import { useNavigation, useRoute } from '@react-navigation/native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import ModalSpin from './ModalSpin';
+import {API_HOST} from '@env';
 
 export default function MenuDetails() {
+    const apiUrlBack = API_HOST;
     const navigation = useNavigation();
     const { menu } = useRoute().params;
 
@@ -123,7 +125,7 @@ export default function MenuDetails() {
 
         try {
             // Make the API call to update the menu
-            const response = await fetch('http://192.168.1.2:5000/updateMenu', {
+            const response = await fetch(`${apiUrlBack}updateMenu`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',

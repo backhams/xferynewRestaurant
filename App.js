@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View } from 'react-native';
+import { View,Alert } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import SignUpAs from './src/components/SignUpAs';
@@ -15,6 +15,17 @@ import MenuManager from './src/components/MenuManager';
 import MenuDetails from './src/components/MenuDetails';
 import FullMenu from './src/components/FullMenu';
 import CompleteOrder from './src/components/CompleteOrder';
+import messaging from '@react-native-firebase/messaging';
+import  PushNotification from 'react-native-push-notification';
+import {requestUserPermission} from './src/components/NotificationService'
+import CustomerOrders from './src/components/CustomerOrders'
+import CustomerOrderList from './src/components/CustomerOrderList';
+import RestaurantOrderList from './src/components/RestaurantOrderList';
+import RestaurantOrders from './src/components/RestaurantOrders';
+import SearchDelivery from './src/components/SearchDelivery';
+import DeliveryOrderList from './src/components/DeliveryOrderList';
+import DeliveryOrders from './src/components/DeliveryOrders';
+import DeliveryProfile from './src/components/DeliveryProfile'
 
 export default function App() {
   const Stack = createNativeStackNavigator();
@@ -23,10 +34,33 @@ export default function App() {
 
     const fetchData = async () => {
       await requestLocationPermission(); // Request location permission
+      await requestUserPermission();
     };
 
     fetchData();
   }, []);
+
+  useEffect(() => {
+  const unsubscribe = messaging().onMessage(async remoteMessage => {
+    console.log('A new FCM message arrived!', JSON.stringify(remoteMessage));
+
+    // Extract title and body from remoteMessage
+    const { title, body } = remoteMessage.notification;
+    // console.log(title)
+
+    PushNotification.localNotification({
+      channelId: "your_channel_id",
+      title: title,
+      message: body,
+      soundName: "default",
+      vibrate: true,
+      playSound: true
+    });
+  });
+
+  return unsubscribe;
+}, []);
+
 
 
   return (
@@ -35,6 +69,7 @@ export default function App() {
       initialRouteName={initialRoute}
       screenOptions={{
         headerShown: false,
+        
       }}
     >
       <Stack.Screen name="SignUpAs" component={SignUpAs} />
@@ -49,6 +84,14 @@ export default function App() {
       <Stack.Screen name="MenuDetails" component={MenuDetails} />
       <Stack.Screen name="FullMenu" component={FullMenu} />
       <Stack.Screen name="CompleteOrder" component={CompleteOrder} />
+      <Stack.Screen name="CustomerOrders" component={CustomerOrders} />
+      <Stack.Screen name="CustomerOrderList" component={CustomerOrderList} />
+      <Stack.Screen name="RestaurantOrderList" component={RestaurantOrderList} />
+      <Stack.Screen name="RestaurantOrders" component={RestaurantOrders} />
+      <Stack.Screen name="SearchDelivery" component={SearchDelivery} />
+      <Stack.Screen name="DeliveryOrderList" component={DeliveryOrderList} />
+      <Stack.Screen name="DeliveryOrders" component={DeliveryOrders} />
+      <Stack.Screen name="DeliveryProfile" component={DeliveryProfile} />
     </Stack.Navigator>
   </NavigationContainer>
   );

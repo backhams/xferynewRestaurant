@@ -6,9 +6,11 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import {API_URL} from '@env';
 
 
 const getDescription = (role ) => {
+  console.log(API_URL)
   switch (role) {
     case 'driver':
       return 'Welcome, delivery partners! 🚚 Join our team to deliver smiles and satisfy appetites across town. With flexible schedules and great earnings, delivering with us is not just a job, its a rewarding journey. Sign up now and become a part of our delivery family!';
@@ -22,6 +24,7 @@ const getDescription = (role ) => {
 };
 
 const LoginForm = ({ route }) => {
+  const apiUrlBack = API_URL;
   const navigation = useNavigation();
   const [userdata,setUserData] = useState();
   const { role } = route.params;
@@ -58,7 +61,7 @@ const LoginForm = ({ route }) => {
   
     try {
       setLoading(true);
-      const response = await fetch('http://192.168.61.86:5000/register', {
+      const response = await fetch(`${apiUrlBack}register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -74,7 +77,8 @@ const LoginForm = ({ route }) => {
         setLoading(false);
       }
     } catch (error) {
-      console.error('Error while saving user data to backend:', error);
+      Alert.alert(error.message)
+      console.log('Error while saving user data to backend:', error);
       setLoading(false);
     }
   };

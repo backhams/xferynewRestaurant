@@ -8,8 +8,10 @@ import { useNavigation } from '@react-navigation/native';
 import { utils } from '@react-native-firebase/app';
 import storage from '@react-native-firebase/storage';
 import { decodeToken } from './LoginToken';
+import {API_URL} from '@env';
 
 export default function UploadMenu() {
+  const apiUrlBack = API_URL;
   const navigation = useNavigation();
   const [selectedImage, setSelectedImage] = useState(null);
   const [title, setTitle] = useState('');
@@ -168,7 +170,7 @@ export default function UploadMenu() {
         const decodedToken = await decodeToken();
         if(decodedToken){
           const userEmail = await decodedToken.email;
-          const responseOfAccount = await fetch(`http://192.168.1.2:5000/getAccount?email=${userEmail}`, {
+          const responseOfAccount = await fetch(`${apiUrlBack}getAccount?email=${userEmail}`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json'
@@ -179,7 +181,7 @@ export default function UploadMenu() {
           if (responseOfAccount.ok) {
             const accountData = await responseOfAccount.json();
             console.log('API Response:', accountData);
-          const response = await fetch(`http://192.168.1.2:5000/menuUpload`, {
+          const response = await fetch(`${apiUrlBack}menuUpload`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'

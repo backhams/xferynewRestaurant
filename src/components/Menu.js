@@ -4,12 +4,17 @@ import EvilIcons from 'react-native-vector-icons/EvilIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { decodeToken, userRole } from './LoginToken';
 import BottomMenu from './BottomMenu';
-import getCurrentLocation from './Location';
+import {getCurrentLocation} from './Location';
 import { createShimmerPlaceholder } from 'react-native-shimmer-placeholder'
 import LinearGradient from 'react-native-linear-gradient'
 const ShimmerPlaceholder = createShimmerPlaceholder(LinearGradient)
+import {API_URL} from '@env';
 
 const MenuPage = () => {
+  const apiUrlBack = API_URL;
+  console.log(API_URL)
+
+  // console.log(apiUrlBack)
   const [searchVisible, setSearchVisible] = useState(false);
   const navigation = useNavigation();
   const [userInfo, setUserInfo] = useState({ name: '', email: '', role: '' });
@@ -40,7 +45,7 @@ const MenuPage = () => {
 
       setLoading(true);
 
-      const response = await fetch(`http://192.168.150.86:5000/nearbySearch?page=${page}&latitude=${latitude}&longitude=${longitude}`, {
+      const response = await fetch(`${apiUrlBack}nearbySearch?page=${page}&latitude=${latitude}&longitude=${longitude}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -90,15 +95,16 @@ const MenuPage = () => {
       });
 
       try {
-        const response = await fetch(`http://192.168.150.86:5000/nearbySearch?page=${page + 1}&latitude=${latitude}&longitude=${longitude}`, { // Use page + 1 directly
+        const response = await fetch(`${apiUrlBack}nearbySearch?page=${page + 1}&latitude=${latitude}&longitude=${longitude}`, { // Use page + 1 directly
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
           },
         });
-
+console.log(apiUrlBack,"after")
         if (response.ok) {
           const data = await response.json();
+          console.log(data)
           if (data.length > 0) {
             setMenu(prevMenu => [...prevMenu, ...data]);
           } else {
@@ -392,12 +398,14 @@ const MenuPage = () => {
                       <Text style={styles.menuItemPrice}>₹ {item.price}</Text>
                       <Text style={styles.menuItemRestaurant}>{item.restaurantName}</Text>
                       <Text style={styles.menuItemRestaurant}>{item.activeStatus}</Text>
-                      <Text style={styles.menuItemRestaurant}>
+                    </View>
+                    <View style={{marginTop:10,flexDirection:"row",alignItems:"center"}}>
+                    <Text style={styles.menuItemRestaurant}>Shortest distance{' '}
                         {calculateDistance(latitude, longitude, item.latitude, item.longitude).distance}{' '}
                         {calculateDistance(latitude, longitude, item.latitude, item.longitude).unit} Away
                       </Text>
-
-                    </View>
+                      <EvilIcons name="question" size={24} color="black" />
+                      </View>
                   </TouchableOpacity>
                 );
               })}
@@ -464,7 +472,8 @@ const styles = StyleSheet.create({
   menuItemRestaurant: {
     fontSize: 14,
     color: 'gray',
-    marginLeft: 20
+    marginLeft: 20,
+    marginRight:10
   },
   loading: {
     alignItems: 'center',

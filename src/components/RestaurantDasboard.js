@@ -15,10 +15,14 @@ import io from 'socket.io-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ModalSpin from './ModalSpin';
 import NetInfo from "@react-native-community/netinfo";
+import { deviceToken } from './NotificationService';
+import {API_URL} from '@env';
 
-let globalsocket = null; 
+let globalsocket = null;
 
 export default function RestaurantDashboard() {
+  const apiUrlBack = API_URL;
+  // console.log(API_HOST)
   const navigation = useNavigation();
   const [userInfo, setUserInfo] = useState({ name: '', email: '', role: '', image: '' });
   const [selectedOption, setSelectedOption] = useState("Today");
@@ -68,7 +72,6 @@ export default function RestaurantDashboard() {
   const stopBackgroundService = async () => {
     await BackgroundService.stop();
     if (globalsocket) {
-      console.log(globalsocket)
       globalsocket.disconnect();
       // setSocket(null); // Update socket state to null
     }
@@ -76,96 +79,70 @@ export default function RestaurantDashboard() {
 
   const sleep = (time) => new Promise((resolve) => setTimeout(() => resolve(), time));
   const veryIntensiveTask = async () => {
-    setLoading(true)
+    setLoading(true);
+  
     const checkInternetAndDisconnect = async () => {
-      const netInfoState = await NetInfo.fetch();
-      if (!netInfoState.isConnected) {
-        // If no internet connection, stop the background service and return
-        await AsyncStorage.removeItem('backgroundTaskState');
-        console.log("remove")
+      try {
+        const netInfoState = await NetInfo.fetch();
+        if (!netInfoState.isConnected) {
+          // If no internet connection, stop the background service and return
+          await AsyncStorage.removeItem('backgroundTaskState');
+          console.log("Background task stopped due to no internet connection.");
+          await stopBackgroundService();
+          setIsSwitchOn(false); // Make sure this state update is handled correctly
+          return;
+        }
+      } catch (error) {
+        console.error("Error occurred while checking internet connection:", error);
+        // Handle the error appropriately, maybe retrying or logging it
+      }
+    };
+  
+    try {
+      if (deviceToken) {
+        const socket = io(`${process.env.API_URL}`);
+        socket.on('connect', async () => {
+          console.log('Connected to server');
+          try {
+            // Send initial data upon connecting
+            const decodedToken = await decodeToken();
+            const restaurantEmail = decodedToken.email; // No need to await here
+            socket.emit('connectData', { restaurantEmail, deviceToken });
+            await AsyncStorage.setItem('backgroundTaskState', String(true));
+            setLoading(false);
+            setResponseText("Activated.");
+            setTimeout(() => {
+              setLoading(false);
+              setResponseText('');
+            }, 2000);
+          } catch (error) {
+            console.error("Error occurred during socket connection:", error);
+            // Handle the error appropriately, maybe retrying or logging it
+          }
+        });
+        globalsocket = socket;
+      } else {
+        Alert.alert("Token not found",
+          "Something went wrong while creating token. Please reopen the app and try again.");
         await stopBackgroundService();
-        setIsSwitchOn(false)
+        setIsSwitchOn(false);
+        setLoading(false);
         return;
       }
-    };
-
-    const socket = io('http://192.168.150.86:5000/');
-    socket.on('connect', async () => {
-      console.log('Connected to server');
-      // Send initial data upon connecting
-      const decodedToken = await decodeToken();
-      const restaurantEmail = await decodedToken.email;
-      socket.emit('connectData', restaurantEmail);
-      cacheRestaurant();
-    });
-    globalsocket=socket;
-    // send restaurant data to server for active cache
-    const cacheRestaurant = async () => {
-
-      try {
-        const decodedToken = await decodeToken();
-        if (decodedToken) {
-          const userEmail = await decodedToken.email;
-          const responseOfAccount = await fetch(`http://192.168.150.86:5000/getAccount?email=${userEmail}`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          });
-
-          if (responseOfAccount.ok) {
-            const accountData = await responseOfAccount.json();
-            const email = await accountData.email;
-            console.log(email)
-
-            const response = await fetch('http://192.168.150.86:5000/cache-restaurant-status', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ email }),
-            });
-
-            if (response.ok) {
-              console.log('Restaurant data sent successfully.');
-              // Handle response if needed
-              // Save the background task state to AsyncStorage
-              await AsyncStorage.setItem('backgroundTaskState', String(true));
-              setLoading(false)
-              setResponseText("Restaurant Online now")
-              setTimeout(() => {
-                setLoading(false);
-                setResponseText('');
-              }, 2000);
-
-            } else {
-              await stopBackgroundService();
-              // Handle error appropriately
-              setLoading(false)
-              setIsSwitchOn(false);
-            }
-          }
-        }
-
-
-
-      } catch (error) {
-        Alert.alert(error.message)
-        await stopBackgroundService();
-        // Handle error appropriately
-        console.log(error)
-        console.warn(error)
-        setLoading(false)
-        setIsSwitchOn(false);
+  
+      while (BackgroundService.isRunning()) {
+        await checkInternetAndDisconnect();
+        await sleep(3000); // Wait for 3 seconds (not 10 seconds as in the comment)
       }
-    };
-
-
-    while (BackgroundService.isRunning()) {
-      await checkInternetAndDisconnect();
-      await sleep(3000); // Wait for 10 seconds
+    } catch (error) {
+      setIsSwitchOn(false);
+      setLoading(false);
+      await AsyncStorage.removeItem('backgroundTaskState');
+      console.error("An unexpected error occurred:", error);
+      // Handle the error appropriately
     }
   };
+  
 
 
   const handleToggle = async (isOn) => {
@@ -237,7 +214,7 @@ export default function RestaurantDashboard() {
         const userEmail = decodedToken.email;
 
         // Proceed with API call using userEmail
-        const response = await fetch(`http://192.168.150.86:5000/restaurantProfileData?email=${userEmail}`, {
+        const response = await fetch(`${apiUrlBack}restaurantProfileData?email=${userEmail}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -286,7 +263,7 @@ export default function RestaurantDashboard() {
         {selectedOption === "This Month" && <Chart data={thisMonthData} />}
       </View>
       <View style={styles.menuContainer}>
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => { navigation.navigate("RestaurantOrderList") }}>
           <AntDesign name="shoppingcart" size={24} color="black" />
           <Text style={styles.menuText}>Orders</Text>
         </TouchableOpacity>

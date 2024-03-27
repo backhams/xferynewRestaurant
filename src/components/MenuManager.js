@@ -6,8 +6,10 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Tooltip from 'react-native-walkthrough-tooltip';
 import storage from '@react-native-firebase/storage';
 import ModalSpin from './ModalSpin';
+import {API_HOST} from '@env';
 
 export default function MenuManager() {
+    const apiUrlBack = API_HOST;
     const navigation = useNavigation();
     const [menus, setMenus] = useState([]);
     const [selectedMenu, setSelectedMenu] = useState(null);
@@ -22,7 +24,7 @@ export default function MenuManager() {
                     const decodedToken = await decodeToken();
                     if (decodedToken) {
                         const userEmail = decodedToken.email;
-                        const response = await fetch(`http://192.168.1.2:5000/fetchMenu?email=${userEmail}`, {
+                        const response = await fetch(`${apiUrlBack}fetchMenu?email=${userEmail}`, {
                             method: 'GET',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -68,7 +70,7 @@ export default function MenuManager() {
             await storageRef.delete();
             console.log('File deleted successfully');
 
-            const response = await fetch(`http://192.168.1.2:5000/deleteMenu?id=${menuId}`, {
+            const response = await fetch(`${apiUrlBack}deleteMenu?id=${menuId}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json'

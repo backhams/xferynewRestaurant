@@ -1,17 +1,19 @@
 import React, { useState, useCallback } from 'react';
 import { StyleSheet, View, ScrollView, ActivityIndicator, TextInput, TouchableOpacity, Text, Dimensions, Alert } from 'react-native';
-import getCurrentLocation from './Location';
+import {getCurrentLocation} from './Location';
 import MapView, { Marker, Circle } from 'react-native-maps';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Feather from 'react-native-vector-icons/Feather';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import { decodeToken } from './LoginToken';
+import {API_HOST} from '@env';
 
 const windowWidth = Dimensions.get('window').width;
 const windowHeight = Dimensions.get('window').height;
 
 export default function EditRestaurant() {
+    const apiUrlBack = API_HOST;
     const navigation = useNavigation();
 
     const [loading, setLoading] = useState(true);
@@ -60,7 +62,7 @@ export default function EditRestaurant() {
 
                     // Ensure userEmail is truthy before making the API call
                     if (userEmail) {
-                        const response = await fetch(`http://192.168.1.2:5000/restaurantProfileData?email=${userEmail}`, {
+                        const response = await fetch(`${apiUrlBack}restaurantProfileData?email=${userEmail}`, {
                             method: 'GET',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -114,7 +116,7 @@ export default function EditRestaurant() {
                 setUserEmail(decodedToken.email);
             }
             setApiLoading(true); // Set loading state to true when starting the API request
-            const response = await fetch('http://192.168.1.2:5000/restaurantProfileEdit', {
+            const response = await fetch(`${apiUrlBack}restaurantProfileEdit`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',

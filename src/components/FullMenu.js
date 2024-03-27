@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
 import { Rating } from 'react-native-ratings';
+import {API_HOST} from '@env';
 
 export default function FullMenu({ route, navigation }) {
+  const apiUrlBack = API_HOST;
+  
   // Extract the itemData from route params
   const { item, distance, unit } = route.params;
   const [modalVisible, setModalVisible] = useState(false);
+  const [quantity, setQuantity] = useState(1);
   const combinedRatingValue = 30; // Example combined rating value
 const totalNumberOfRatings = 5; // Example total number of ratings
 
@@ -16,22 +20,37 @@ console.log(averageRating)
   const discountPercentage = Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100);
 
 
+   // Function to increment quantity
+   const incrementQuantity = () => {
+    setQuantity(quantity + 1);
+  };
+
+  // Function to decrement quantity
+  const decrementQuantity = () => {
+    if (quantity > 1) {
+      setQuantity(quantity - 1);
+    }
+  };
+
+
    // Function to handle place order
    const handlePlaceOrder = async () => {
-    // Your API endpoint URL
-    const apiUrl = 'http://192.168.150.86:5000/checkRestaurantActiveStatus';
 
     try {
       // Make API call
-      const response = await fetch(`${apiUrl}?email=${encodeURIComponent(item.email)}`, {
+      console.log("API_HOST")
+      const response = await fetch(`${process.env.API_URL}checkRestaurantActiveStatus?email=${encodeURIComponent(item.email)}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           // Add any additional headers if required
         },
       });
+      console.log("API_HOST after")
       if (response.ok) {
-        navigation.navigate('CompleteOrder', { item: item });
+        const data = await response.json();
+        console.log(data)
+        navigation.navigate('CompleteOrder', { item,data,quantity });
     } else {
         // Handle other cases, e.g., show an error message
         console.log('Failed to place order');
@@ -63,6 +82,16 @@ console.log(averageRating)
         <Text style={styles.restaurantName}>Restaurant Name: {item.restaurantName}</Text>
         <Text style={styles.extraInfo}> | {distance} {unit} Away</Text>
       </View>
+      <View style={styles.quantityContainer}>
+          <Text style={styles.quantityText}>Quantity:</Text>
+          <TouchableOpacity onPress={decrementQuantity}>
+            <Text style={styles.quantityButton}>-</Text>
+          </TouchableOpacity>
+          <Text style={styles.quantity}>{quantity}</Text>
+          <TouchableOpacity onPress={incrementQuantity}>
+            <Text style={styles.quantityButton}>+</Text>
+          </TouchableOpacity>
+        </View>
       <Text style={styles.description}>Description: {item.description}</Text>
 
       {/* Rating */}
@@ -251,5 +280,23 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#fff',
+  },
+  quantityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 10,
+  },
+  quantityButton: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 5,
+    marginHorizontal: 5,
+  },
+  quantity: {
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
