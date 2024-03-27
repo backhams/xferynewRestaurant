@@ -13,6 +13,7 @@ import ModalSpin from './ModalSpin';
 import NetInfo from "@react-native-community/netinfo";
 import { deviceToken } from './NotificationService';
 import { decodeToken, userRole } from './LoginToken';
+import SideMenuModal from './DeliverySideMenu'
 import {API_HOST} from '@env';
 
 let globalsocket = null;
@@ -26,6 +27,7 @@ export default function DeliveryDashboard({navigation}) {
   const [selectedOption, setSelectedOption] = useState("Today");
   const [loading, setLoading] = useState(false);
   const [responseText, setResponseText] = useState('');
+  const [sideMenuVisible, setSideMenuVisible] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -125,7 +127,7 @@ export default function DeliveryDashboard({navigation}) {
             {
               text: "OK",
               onPress: async () => {
-                // navigation.navigate("Setting")
+                navigation.navigate("DeliveryProfile",{email:deliveryEmail})
                 console.log("ok")
               }
             }
@@ -257,7 +259,7 @@ export default function DeliveryDashboard({navigation}) {
     <View style={styles.container}>
       <View>
         <View style={styles.navbarMenu}>
-          <TouchableOpacity style={styles.menuButton}>
+          <TouchableOpacity style={styles.menuButton} onPress={() => setSideMenuVisible(true)}>
             <Icon name="bars" size={24} color="black" />
           </TouchableOpacity>
           <ToggleSwitch
@@ -347,6 +349,7 @@ export default function DeliveryDashboard({navigation}) {
           <Text style={{ color: 'green', marginLeft: 10 }}>Good</Text>
         </TouchableOpacity>
       {/* </View> */}
+      <SideMenuModal visible={sideMenuVisible} onClose={() => setSideMenuVisible(false)} />
       <ModalSpin loading={loading} loadingText={"Activating"} responseText={responseText} />
     </View>
   );

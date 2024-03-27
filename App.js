@@ -26,6 +26,7 @@ import SearchDelivery from './src/components/SearchDelivery';
 import DeliveryOrderList from './src/components/DeliveryOrderList';
 import DeliveryOrders from './src/components/DeliveryOrders';
 import DeliveryProfile from './src/components/DeliveryProfile'
+import DeliverySideMenu from './src/components/DeliverySideMenu';
 
 export default function App() {
   const Stack = createNativeStackNavigator();
@@ -92,6 +93,7 @@ export default function App() {
       <Stack.Screen name="DeliveryOrderList" component={DeliveryOrderList} />
       <Stack.Screen name="DeliveryOrders" component={DeliveryOrders} />
       <Stack.Screen name="DeliveryProfile" component={DeliveryProfile} />
+      <Stack.Screen name="DeliverySideMenu" component={DeliverySideMenu} />
     </Stack.Navigator>
   </NavigationContainer>
   );
