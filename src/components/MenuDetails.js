@@ -3,10 +3,10 @@ import { Text, View, StyleSheet, Image, TextInput, TouchableOpacity, Dimensions,
 import { useNavigation, useRoute } from '@react-navigation/native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import ModalSpin from './ModalSpin';
-import {API_HOST} from '@env';
+import {API_URL} from '@env';
 
 export default function MenuDetails() {
-    const apiUrlBack = API_HOST;
+    const apiUrlBack = API_URL;
     const navigation = useNavigation();
     const { menu } = useRoute().params;
 

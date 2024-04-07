@@ -264,31 +264,31 @@ export default function RestaurantDashboard() {
       </View>
       <View style={styles.menuContainer}>
         <TouchableOpacity style={styles.menuItem} onPress={() => { navigation.navigate("RestaurantOrderList") }}>
-          <AntDesign name="shoppingcart" size={24} color="black" />
+          <AntDesign name="shoppingcart" size={24} color="#FE5301" />
           <Text style={styles.menuText}>Orders</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.menuItem} onPress={() => { navigation.navigate("MenuManager") }}>
-          <AntDesign name="menuunfold" size={24} color="black" />
+          <AntDesign name="menuunfold" size={24} color="#FE5301" />
           <Text style={styles.menuText}>Menu Manager</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.menuItem} onPress={() => { locationExistendChecker() }}>
-          <AntDesign name="upload" size={24} color="black" />
+          <AntDesign name="upload" size={24} color="#FE5301" />
           <Text style={styles.menuText}>Upload Menu</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.menuItem} onPress={() => { navigation.navigate("EditRestaurant") }}>
-          <AntDesign name="edit" size={24} color="black" />
+          <AntDesign name="edit" size={24} color="#FE5301" />
           <Text style={styles.menuText}>Profile Edit</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.menuItem}>
-          <MaterialIcons name="payment" size={24} color="black" />
+          <MaterialIcons name="payment" size={24} color="#FE5301" />
           <Text style={styles.menuText}>Billing</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.menuItem}>
-          <AntDesign name="question" size={24} color="black" />
+          <AntDesign name="question" size={24} color="#FE5301" />
           <Text style={styles.menuText}>Get Help</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.menuItem}>
-          <AntDesign name="logout" size={24} color="black" />
+          <AntDesign name="logout" size={24} color="#FE5301" />
           <Text style={styles.menuText}>Logout</Text>
         </TouchableOpacity>
       </View>
@@ -309,13 +309,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 10, // Increase padding to accommodate the shadow
-    backgroundColor: 'white', // Ensure your navbar has a background color
-    shadowColor: '#000', // Shadow color for iOS
-    shadowOffset: { width: 0, height: 2 }, // Shadow offset for iOS
-    shadowOpacity: 0.25, // Shadow opacity for iOS
-    shadowRadius: 3.84, // Shadow radius for iOS
-    elevation: 5, // Elevation for Android
+    paddingBottom: 10,
   },
   title: {
     fontSize: 20,

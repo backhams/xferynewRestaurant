@@ -4,13 +4,14 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import MapView, { Marker } from 'react-native-maps';
 import { decodeToken, userRole } from './LoginToken';
 import ModalSpin from './ModalSpin';
-import {API_HOST} from '@env';
+import {API_URL} from '@env';
 
 export default function CustomerOrders({ navigation, route }) {
-  const apiUrlBack = API_HOST;
+  const apiUrlBack = API_URL;
   const { orderId } = route.params;
 
   const [orderData, setOrderData] = useState();
+  console.log(orderData.customerOtp)
   const [loading, setLoading] = useState(true); 
   const [orderCancelLoader, setOrderCancelLoader] = useState(false);
   const [responseText, setResponseText] = useState('');

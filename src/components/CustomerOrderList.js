@@ -21,7 +21,7 @@ export default function CustomerOrderList({ navigation }) {
     try {
       const decodedToken = await decodeToken();
       const userEmail = decodedToken.email;
-      const role = await userRole();
+      const role = "customer";
       const response = await fetch(`${apiUrlBack}orderList?page=${page}`, {
         method: 'POST',
         headers: {
@@ -57,7 +57,7 @@ export default function CustomerOrderList({ navigation }) {
       try {
         const decodedToken = await decodeToken();
         const userEmail = decodedToken.email;
-        const role = await userRole();
+        const role = "customer"
         const response = await fetch(`${apiUrlBack}orderList?page=${page + 1}`, {
           method: 'POST',
           headers: {
@@ -169,6 +169,7 @@ export default function CustomerOrderList({ navigation }) {
                     <Text style={styles.quantity}>Quantity: {order.quantity}</Text>
                     <Text style={styles.status}>Status: {order.status}</Text>
                     <Text style={styles.orderId}>Order ID: {order.orderId}</Text>
+                    <Text style={styles.orderId}>Otp: {order.customerOtp}</Text>
                     <View style={styles.bottomRight}>
                       <Text style={styles.createdAt}>{formatTimeDifference(order.createdAt)}</Text>
                     </View>

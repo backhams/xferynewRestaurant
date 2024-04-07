@@ -15,7 +15,6 @@ const windowHeight = Dimensions.get('window').height;
 
 export default function CompleteOrder({ navigation, route }) {
   const apiUrlBack = API_URL;
-  // console.log(API_HOST)
   
   const { item, data,quantity } = route.params;
   const handleBackButton = () => {
@@ -28,6 +27,7 @@ export default function CompleteOrder({ navigation, route }) {
   const [distance, setDistance] = useState(null);
   const [loading, setLoading] = useState(true);
   const [orderCreateLoader, setOrderCreateLoader] = useState(false);
+  const [refresh, setRefresh] = useState(false);
   const [responseText, setResponseText] = useState('');
   const [processingFees, setProcessingFees] = useState();
   const [deliveryFees, setDeliveryFees] = useState();
@@ -37,6 +37,7 @@ export default function CompleteOrder({ navigation, route }) {
   const [isPhoneNumberValid, setIsPhoneNumberValid] = useState(false);
   const [name, setName] = useState('');
   const [isNameValid, setIsNameValid] = useState(false);
+  const [loadingLocation, setLoadingLocation] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -47,19 +48,20 @@ export default function CompleteOrder({ navigation, route }) {
         setAccuracy(accuracy);
         
         // Fetch data from backend API endpoint using GET method
-        const response = await fetch(`${process.env.API_URL}feesCalculator?price=${item.price}`, {
+        const response = await fetch(`${process.env.API_URL}feesCalculator?startCoordinates=${longitude},${latitude}&endCoordinates=${item.longitude},${item.latitude}`, {
           method: 'GET',
           headers: {
-            'Content-Type': 'application/json' // Adjust the content type as needed
-            // You can add more headers if required
+            'Content-Type': 'application/json'
           }
-        });
+        });        
+        
         if (response.ok) {
           const data = await response.json();
           console.log(data);
           setProcessingFees(data.processingFees)
           setDeliveryFees(data.deliveryFees)
           setLoading(false);
+          setDistance(data.distanceInKm)
 
         } else{
           setLoading(false);  
@@ -76,32 +78,74 @@ export default function CompleteOrder({ navigation, route }) {
     return () => {
       // Cleanup function if needed
     };
-  }, []);
+  }, [refresh]);
 
-  // Fetch data on component mount
-  useEffect(() => {
-    // Calculate distance between user's location and item's location
-    const distanceResult = calculateDistance(latitude, longitude, item.latitude, item.longitude);
-    setDistance(distanceResult);
-    return () => {
-      // Cleanup function if needed
-    };
-  }, [latitude, longitude]);
 
-  const handleMapLongPress = (event) => {
-    const { latitude, longitude } = event.nativeEvent.coordinate;
-    console.log('New Latitude:', latitude);
-    console.log('New Longitude:', longitude);
-    setLatitude(latitude);
-    setLongitude(longitude);
-    setAccuracy(20);
+  const handleMapLongPress = async (event) => {
+    if (loadingLocation) return; // Do nothing if loading location
+    
+    try {
+      setLoadingLocation(true); // Set loading location state to true
+      
+      const { latitude, longitude } = event.nativeEvent.coordinate;
+      console.log('New Latitude:', latitude);
+      console.log('New Longitude:', longitude);
+      setLatitude(latitude);
+      setLongitude(longitude);
+      setAccuracy(20);
+      
+      // Fetch data from backend API endpoint using GET method
+      const response = await fetch(`${process.env.API_URL}feesCalculator?startCoordinates=${longitude},${latitude}&endCoordinates=${item.longitude},${item.latitude}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });        
+      
+      const data = await response.json();
+      if (response.ok) {
+        console.log(data);
+        setProcessingFees(data.processingFees);
+        setDeliveryFees(data.deliveryFees);
+        setDistance(data.distanceInKm);
+      } else {
+        Alert.alert(
+          "Error",
+          data.error,
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                setRefresh(true)
+                setLoading(true)
+              }
+            }
+          ],
+          { cancelable: false }
+        ); 
+        
+      }
+    } catch (error) {
+      console.log('Error handling map long press:', error.message);
+      Alert.alert("Some went wrong!")
+    } finally {
+      setLoadingLocation(false); // Set loading location state to false after operation
+    }
   };
+  
+  
+  
 
   const completeOrderButton = async () => {
     if (accuracy > 40) {
       Alert.alert(
         "Accuracy Low",
         `Accuracy is ${accuracy} meters. Please select your address from the map manually.`
+      );
+    } else if (distance>=5){
+      Alert.alert(
+        "Unavailable",
+        `Delivery to this location is not available from this restaurant. Please select another location.`
       );
     } else {
       setModalVisible(true)
@@ -147,7 +191,8 @@ export default function CompleteOrder({ navigation, route }) {
         quantity,
         processingFees,
         deliveryFees,
-        quantity
+        quantity,
+        distance
       };
 
       if (userEmail || deviceToken) {
@@ -159,8 +204,8 @@ export default function CompleteOrder({ navigation, route }) {
           body: JSON.stringify(requestBody),
         });
 
+        const responseData = await response.json();
         if (response.ok) {
-          const responseData = await response.json();
           console.log('Response from backend:', responseData);
           setResponseText("Order Placed")
           setModalVisible(false);
@@ -169,7 +214,7 @@ export default function CompleteOrder({ navigation, route }) {
           },3000)
         } else {
           setOrderCreateLoader(false)
-          throw new Error('Failed to complete order');
+          Alert.alert(responseData.error);
         }
 
       } else {
@@ -239,22 +284,31 @@ export default function CompleteOrder({ navigation, route }) {
                 fillColor="rgba(0, 0, 255, 0.1)"
               />
             </MapView>
-            {/* Accuracy display */}
-            {accuracy !== null && (
-              <View style={styles.accuracyContainer}>
-                <Text style={[styles.accuracyText, { color: accuracy > 40 ? 'red' : 'green' }]}>
-                  {accuracy > 40
-                    ? `Inaccurate location. Reported accuracy: ${accuracy} meters. Select your location manually from the map.`
-                    : `We're using your current location as your delivery address. If you need to change it, simply long-press on the map to select a new address.`}
-                </Text>
-              </View>
-            )}
+            {/* Show either accuracy information or red-colored text based on condition */}
+    {(accuracy !== null && distance !== null && distance > 5) ? (
+      <View style={styles.accuracyContainer}>
+        <Text style={{ color: 'red', textAlign: 'center' }}>
+        Delivery to this location is not available from this restaurant. Please select another location.
+        </Text>
+      </View>
+    ) : (
+      accuracy !== null && (
+        <View style={styles.accuracyContainer}>
+          <Text style={[styles.accuracyText, { color: accuracy > 40 ? 'red' : 'green' }]}>
+            {accuracy > 40
+              ? `Inaccurate location. Reported accuracy: ${accuracy} meters. Select your location manually from the map.`
+              : `We're using your current location as your delivery address. If you need to change it, simply long-press on the map to select a new address.`}
+          </Text>
+        </View>
+      )
+    )}
+            
           </View>
           {/* Menu items */}
           <View style={styles.menuMainContainer}>
             <View style={styles.menuContainer}>
               {distance !== null && (
-                <Text style={styles.distance}>Delivering from {distance.distance} {distance.unit} away Shortest distance, you can chill while we bring your food to you.</Text>
+                <Text style={styles.distance}>Delivering from {distance} km away, you can chill while we bring your food to you.</Text>
               )}
               {/* Menu item */}
               <View style={styles.menuItem}>

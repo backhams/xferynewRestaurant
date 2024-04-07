@@ -1,17 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
 import { Rating } from 'react-native-ratings';
-import {API_HOST} from '@env';
+import {API_URL} from '@env';
+import { getCurrentLocation } from './Location';
 
 export default function FullMenu({ route, navigation }) {
-  const apiUrlBack = API_HOST;
+  const apiUrlBack = API_URL;
   
   // Extract the itemData from route params
-  const { item, distance, unit } = route.params;
+  const { item,} = route.params;
   const [modalVisible, setModalVisible] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const combinedRatingValue = 30; // Example combined rating value
 const totalNumberOfRatings = 5; // Example total number of ratings
+const [distanceData,setDistanceData] = useState([]);
+const [loading,setLoading] = useState(true);
 
 const averageRating = combinedRatingValue / totalNumberOfRatings;
 console.log(averageRating)
@@ -32,6 +35,36 @@ console.log(averageRating)
     }
   };
 
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { latitude, longitude } = await getCurrentLocation();
+
+        const response = await fetch(`${apiUrlBack}calculateDistance?startCoordinates=${longitude},${latitude}&endCoordinates=${item.longitude},${item.latitude}`, {
+          method: 'GET'
+        });
+        const data = await response.json();
+
+        console.log(data);
+        if(response.ok){
+          setDistanceData(data)
+          setLoading(false)
+        } else{
+          setDistanceData([])
+          setLoading(false)
+        }
+
+        // Handle the response data as needed
+      } catch (error) {
+        console.log('Error fetching data:', error);
+        Alert.alert(error.message)
+        setLoading(false)
+      }
+    };
+
+    fetchData();
+  }, []);
 
    // Function to handle place order
    const handlePlaceOrder = async () => {
@@ -80,7 +113,13 @@ console.log(averageRating)
       <Text style={styles.price}>₹ {item.price}</Text>
       <View style={styles.restaurantInfo}>
         <Text style={styles.restaurantName}>Restaurant Name: {item.restaurantName}</Text>
-        <Text style={styles.extraInfo}> | {distance} {unit} Away</Text>
+        {loading ? (
+    <Text style={styles.extraInfo}> | Loading...</Text>
+  ) : distanceData.length === 0 ? (
+    <Text style={styles.extraInfo}> | Distance not available</Text>
+  ) : (
+    <Text style={styles.extraInfo}> |  {distanceData.distance} Km Away</Text>
+  )}
       </View>
       <View style={styles.quantityContainer}>
           <Text style={styles.quantityText}>Quantity:</Text>

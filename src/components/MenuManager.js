@@ -6,10 +6,10 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Tooltip from 'react-native-walkthrough-tooltip';
 import storage from '@react-native-firebase/storage';
 import ModalSpin from './ModalSpin';
-import {API_HOST} from '@env';
+import {API_URL} from '@env';
 
 export default function MenuManager() {
-    const apiUrlBack = API_HOST;
+    const apiUrlBack = API_URL;
     const navigation = useNavigation();
     const [menus, setMenus] = useState([]);
     const [selectedMenu, setSelectedMenu] = useState(null);

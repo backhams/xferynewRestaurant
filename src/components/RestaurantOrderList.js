@@ -56,11 +56,11 @@ export default function RestaurantOrderList({ navigation }) {
       case "pick up":
         setFilterLoadingText("Picked up Orders");
         break;
-      case "Delivered":
+      case "delivered":
         setFilterLoadingText("Delivered Orders");
         break;
-      case "cancel":
-        setFilterLoadingText("Cancel Orders");
+      case "dispute":
+        setFilterLoadingText("dispute Orders");
         break;
       default:
         setFilterLoadingText("");
@@ -68,61 +68,61 @@ export default function RestaurantOrderList({ navigation }) {
     }
   }, [statusFilter]);
 
-// Modify the useEffect hook to handle the orderAssignStatusChange event
-useEffect(() => {
-  // Connect to the socket server
-  const newSocket = io(apiUrlBack);
-  setSocket(newSocket);
+  // Modify the useEffect hook to handle the orderAssignStatusChange event
+  useEffect(() => {
+    // Connect to the socket server
+    const newSocket = io(apiUrlBack);
+    setSocket(newSocket);
 
-  // Handle connection
-  newSocket.on('connect', () => {
-    console.log('Connected to socket server');
-  });
-
-  // Handle disconnection
-  newSocket.on('disconnect', () => {
-    console.log('Disconnected from socket server');
-  });
-
-  // Clean up the socket connection on component unmount
-  return () => {
-    newSocket.disconnect();
-    setSocket(null);
-  };
-}, []);
-
-
-useEffect(()=>{
-  if(statusFilter==="preparing"){
-    console.log("run")
-    socket.on('orderAssignStatusChange', async (data) => {
-      // Check if the received data contains an orderId
-      if (data) {
-        // Find the order in orderHistory with matching orderId
-        const matchedOrder = orderIds.filter(orderId => orderId === data);
-        console.log(matchedOrder)
-    
-        if (matchedOrder.length > 0) {
-          // Order found, do further processing
-          console.log('Order matched:', matchedOrder);
-          // Check which document has this orderId and perform actions accordingly
-           // Refresh the page here
-           const stopLoading = "stopLoading"
-          onRefresh(stopLoading);
-        } else {
-          // No order found with the received orderId
-          console.log('No order found with orderId:', data);
-        }
-      } else {
-        // No orderId found in the received data
-        console.log('Received data does not contain orderId');
-      }
+    // Handle connection
+    newSocket.on('connect', () => {
+      console.log('Connected to socket server');
     });
-  }
-   
-},[orderIds])
 
-  
+    // Handle disconnection
+    newSocket.on('disconnect', () => {
+      console.log('Disconnected from socket server');
+    });
+
+    // Clean up the socket connection on component unmount
+    return () => {
+      newSocket.disconnect();
+      setSocket(null);
+    };
+  }, []);
+
+
+  useEffect(() => {
+    if (statusFilter === "preparing") {
+      console.log("run")
+      socket.on('orderAssignStatusChange', async (data) => {
+        // Check if the received data contains an orderId
+        if (data) {
+          // Find the order in orderHistory with matching orderId
+          const matchedOrder = orderIds.filter(orderId => orderId === data);
+          console.log(matchedOrder)
+
+          if (matchedOrder.length > 0) {
+            // Order found, do further processing
+            console.log('Order matched:', matchedOrder);
+            // Check which document has this orderId and perform actions accordingly
+            // Refresh the page here
+            const stopLoading = "stopLoading"
+            onRefresh(stopLoading);
+          } else {
+            // No order found with the received orderId
+            console.log('No order found with orderId:', data);
+          }
+        } else {
+          // No orderId found in the received data
+          console.log('Received data does not contain orderId');
+        }
+      });
+    }
+
+  }, [orderIds])
+
+
 
 
   const fetchOrderHistory = async () => {
@@ -144,9 +144,9 @@ useEffect(()=>{
           setOrderHistory(sortedOrderHistory);
           // Initialize preparation times for each order item
 
-           // Extracting orderIds from data array
-           const orderIdsArray = sortedOrderHistory.map(order => order.orderId);
-           setOrderIds(orderIdsArray);
+          // Extracting orderIds from data array
+          const orderIdsArray = sortedOrderHistory.map(order => order.orderId);
+          setOrderIds(orderIdsArray);
 
 
           const initialPreparationTimes = {};
@@ -229,14 +229,14 @@ useEffect(()=>{
 
 
   const onRefresh = async (stopLoading) => {
-    if(stopLoading == "stopLoading"){
+    if (stopLoading == "stopLoading") {
       await fetchOrderHistory();
-    } else{
+    } else {
       setRefreshing(true);
       await setHasMore(true);
       await fetchOrderHistory();
     }
-         
+
   };
 
   const formatTimeDifference = (createdAt) => {
@@ -384,8 +384,10 @@ useEffect(()=>{
           </TouchableOpacity>
           <Text style={styles.title}>Order</Text>
         </View>
-        <View
-          style={{ flexDirection: "row", justifyContent: "space-between", marginHorizontal: 20, marginVertical: 10 }}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.statusButtonsContainer}
         >
           <TouchableOpacity style={statusFilter === "ordered" ? styles.selectedStatusTitleBtn : styles.statusTitleBtn} onPress={() => handleStatusFilter("ordered")}>
             <Text style={statusFilter === "ordered" ? styles.selectedStatusTitle : styles.statusTitle}>New Orders</Text>
@@ -399,13 +401,13 @@ useEffect(()=>{
           <TouchableOpacity style={statusFilter === "pick up" ? styles.selectedStatusTitleBtn : styles.statusTitleBtn} onPress={() => handleStatusFilter("pick up")}>
             <Text style={statusFilter === "pick up" ? styles.selectedStatusTitle : styles.statusTitle}>Pick up</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={statusFilter === "Delivered" ? styles.selectedStatusTitleBtn : styles.statusTitleBtn} onPress={() => handleStatusFilter("Delivered")}>
-            <Text style={statusFilter === "Delivered" ? styles.selectedStatusTitle : styles.statusTitle}>Delivered</Text>
+          <TouchableOpacity style={statusFilter === "delivered" ? styles.selectedStatusTitleBtn : styles.statusTitleBtn} onPress={() => handleStatusFilter("delivered")}>
+            <Text style={statusFilter === "delivered" ? styles.selectedStatusTitle : styles.statusTitle}>Delivered</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={statusFilter === "cancel" ? styles.selectedStatusTitleBtn : styles.statusTitleBtn} onPress={() => handleStatusFilter("cancel")}>
-            <Text style={statusFilter === "cancel" ? styles.selectedStatusTitle : styles.statusTitle}>Cancel</Text>
+          <TouchableOpacity style={statusFilter === "dispute" ? styles.selectedStatusTitleBtn : styles.statusTitleBtn} onPress={() => handleStatusFilter("dispute")}>
+            <Text style={statusFilter === "dispute" ? styles.selectedStatusTitle : styles.statusTitle}>dispute</Text>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
       </View>
 
       {loading ? (
@@ -525,55 +527,59 @@ useEffect(()=>{
               {/* for preparing */}
               {order.status === "preparing" && (
                 <>
-                {order.assignStatus==="yet to assign" && (
-                <View style={styles.deliveryAssign}>
-                    <View>
-                      <View style={{ flexDirection: "row", alignItems: "center" }}>
-                        <Blinking />
-                        <Text style={styles.deliveryAssignTitle}>Delivery Partner will be assigned shortly</Text>
+                  {order.assignStatus === "yet to assign" && (
+                    <View style={styles.deliveryAssign}>
+                      <View>
+                        <View style={{ flexDirection: "row", alignItems: "center" }}>
+                          <Blinking />
+                          <Text style={styles.deliveryAssignTitle}>Delivery Partner will be assigned shortly</Text>
+                        </View>
+                        <Text style={styles.deliveryDescription}>Kindly continue food preparation, delivery will reach your location shortly</Text>
                       </View>
-                      <Text style={styles.deliveryDescription}>Kindly continue food preparation, delivery will reach your location shortly</Text>
+                      <Text>{order.nearbyPartner} delivery partners have been assigned to pick up your order. One will be assigned shortly </Text>
                     </View>
-                    <Text>{order.nearbyPartner} delivery partners have been assigned to pick up your order. One will be assigned shortly </Text>
-                  </View>
-                )} 
+                  )}
 
-                {order.assignStatus==="assign" && (
-                 <View style={styles.deliveryAssign}>
-                 <View>
-                   <View style={{ flexDirection: "row", alignItems: "center" }}>
-                     <Text style={styles.deliveryAssignTitle}>Podang, assigned, will arrive shortly.</Text>
-                   </View>
-                   <Text style={styles.deliveryDescription}>OTP: 57496</Text>
-                 </View>
-                 <TouchableOpacity onPress={() => toggleMenuDelivery(order.orderId)}>
-                      <MaterialIcons name="wifi-calling-3" size={24} color={"blue"} />
+                  {order.assignStatus === "assign" && (
+                    <View style={styles.deliveryAssign}>
+                      <View>
+                        <Image
+                          source={{ uri: order.deliveryProfile }}
+                          style={styles.deliveryImage}
+                        />
+                        <View style={{ flexDirection: "row", alignItems: "center" }}>
+                          <Text style={styles.deliveryAssignTitle}>{order.deliveryName}, assigned, will arrive shortly.</Text>
+                        </View>
+                        <Text style={styles.deliveryDescription}>OTP: {order.restaurantOtp}</Text>
+                      </View>
+                      <TouchableOpacity onPress={() => toggleMenuDelivery(order.orderId)}>
+                        <MaterialIcons name="wifi-calling-3" size={24} color={"blue"} />
+                      </TouchableOpacity>
+                      {showMenuDelivery[order.orderId] && (
+                        <View style={styles.menu}>
+                          <TouchableOpacity onPress={() => callDelivery(order.deliveryNumber)}>
+                            <Text>Call Delivery partner</Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
+                    </View>
+
+                  )}
+
+                  {order.assignStatus === "not assign" && (
+                    <TouchableOpacity onPress={() => { Alert.alert("Manage Delivery") }} style={styles.deliveryAssign}>
+                      <View>
+                        <View style={{ flexDirection: "row", alignItems: "center" }}>
+                          <Foundation name="alert" size={24} color={"black"} />
+                          <Text style={styles.deliveryAssignTitle}>No delivery partner assigned</Text>
+                        </View>
+                        <Text style={styles.deliveryDescription}>
+                          Would you like to manage the delivery for this order? If yes, <Text onPress={() => { Alert.alert("Manage Delivery") }} style={{ textDecorationLine: 'underline', color: 'blue' }}>click here</Text>.
+                        </Text>
+                      </View>
                     </TouchableOpacity>
-                    {showMenuDelivery[order.orderId] && (
-                <View style={styles.menu}>
-                  <TouchableOpacity onPress={() => callDelivery(order.deliveryNumber)}>
-                    <Text>Call Delivery partner</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-               </View>
-               
-                )}  
 
-                 {order.assignStatus==="not assign" && (
-                  <TouchableOpacity onPress={() => { Alert.alert("Manage Delivery") }} style={styles.deliveryAssign}>
-                  <View>
-                    <View style={{ flexDirection: "row", alignItems: "center" }}>
-                      <Foundation name="alert" size={24} color={"black"} />
-                      <Text style={styles.deliveryAssignTitle}>No delivery partner assigned</Text>
-                    </View>
-                    <Text style={styles.deliveryDescription}>
-                      Would you like to manage the delivery for this order? If yes, <Text onPress={() => { Alert.alert("Manage Delivery") }} style={{ textDecorationLine: 'underline', color: 'blue' }}>click here</Text>.
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-                
-                 )}
+                  )}
 
                   <TouchableOpacity
                     style={[
@@ -629,10 +635,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   statusTitleBtn: {
-    borderColor: "black",
-    borderWidth: 1,
-    paddingHorizontal: 7,
-    borderRadius: 5,
+    backgroundColor: "#e3e3e3",
+    paddingHorizontal: 15,
+    paddingVertical: 7,
+    borderRadius: 10,
+    marginHorizontal: 5,
     // height:Dimensions.get("screen").height - 817,
     paddingVertical: 7,
     flexDirection: "row",
@@ -649,7 +656,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#FE5301"
   },
   statusTitle: {
-    fontSize: 12
+    fontSize: 12,
+    color: "black"
   },
   selectedStatusTitle: {
     color: "white"
@@ -798,8 +806,19 @@ const styles = StyleSheet.create({
     paddingTop: 5
   },
   deliveryDescription: {
-    marginHorizontal:20
-  }
+    marginHorizontal: 20
+  },
+  deliveryImage: {
+    width: 50,
+    height: 50,
+    resizeMode: 'cover', // Adjust the resizeMode as needed
+    borderRadius: 100
+  },
+  statusButtonsContainer: {
+    flexDirection: 'row',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+  },
 });
 
 

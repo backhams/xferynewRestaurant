@@ -7,13 +7,13 @@ import Feather from 'react-native-vector-icons/Feather';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import { decodeToken } from './LoginToken';
-import {API_HOST} from '@env';
+import {API_URL} from '@env';
 
 const windowWidth = Dimensions.get('window').width;
 const windowHeight = Dimensions.get('window').height;
 
 export default function EditRestaurant() {
-    const apiUrlBack = API_HOST;
+    const apiUrlBack = API_URL;
     const navigation = useNavigation();
 
     const [loading, setLoading] = useState(true);

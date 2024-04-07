@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, RefreshControl, Alert, Dimensions } from 'react-native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import { decodeToken, userRole } from './LoginToken';
-import {API_HOST} from '@env';
+import {API_URL} from '@env';
 
 export default function RestaurantOrderList({ navigation }) {
-    const apiUrlBack = API_HOST;
+    const apiUrlBack = API_URL;
     const [orderHistory, setOrderHistory] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -13,26 +13,51 @@ export default function RestaurantOrderList({ navigation }) {
     const [hasMore, setHasMore] = useState(true);
     const [page, setPage] = useState(1);
     const [currentTime, setCurrentTime] = useState(new Date());
+    const [statusFilter, setStatusFilter] = useState("preparing");
+    const [filterLoadingText, setFilterLoadingText] = useState();
+
 
     useEffect(() => {
-        fetchOrderHistory();
-    }, []);
+        setLoading(true);
+        fetchOrderHistory(statusFilter);
+        switch (statusFilter) {
+          case "preparing":
+            setFilterLoadingText("New Orders");
+            break;
+          case "assign":
+            setFilterLoadingText("Accpeted Orders");
+            break;
+          case "pick up":
+            setFilterLoadingText("Picked up Orders");
+            break;
+          case "delivered":
+            setFilterLoadingText("Delivered Orders");
+            break;
+          case "dispute":
+            setFilterLoadingText("Dispute Orders");
+            break;
+          default:
+            setFilterLoadingText("");
+            break;
+        }
+      }, [statusFilter]);
+
 
     const fetchOrderHistory = async () => {
         try {
             const decodedToken = await decodeToken();
             const userEmail = decodedToken.email;
-            const role = await userRole();
             const response = await fetch(`${apiUrlBack}orderList?page=${page}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     // Add any additional headers if required
                 },
-                body: JSON.stringify({ email: userEmail, role }),
+                body: JSON.stringify({ email: userEmail, role:"delivery",status: statusFilter }),
             });
             if (response.ok) {
                 const data = await response.json();
+                console.log(data)
                 if (data.length > 0) {
                     // Sort the order history by createdAt in descending order
                     const sortedOrderHistory = data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -40,51 +65,73 @@ export default function RestaurantOrderList({ navigation }) {
 
                 } else {
                     setHasMore(false);
+                    setOrderHistory([]);
                 }
             }
         } catch (error) {
             Alert.alert(error.message)
+            console.log(error.message)
+            setOrderHistory("error");
         } finally {
             setLoading(false); // After fetching, set loading to false
             setRefreshing(false); // After fetching or on error, set refreshing to false
         }
     };
 
-    const handleLoadMore = async () => {
+
+    const handleStatusFilter = async (status) => {
+        await setPage(1);
+        await setStatusFilter(status);
+      };
+
+      const handleLoadMore = async () => {
         if (!loading && !fetchingMore && hasMore) {
-            setFetchingMore(true);
-            setPage(prevPage => prevPage + 1);
-
-            try {
-                const decodedToken = await decodeToken();
-                const userEmail = decodedToken.email;
-                const role = await userRole();
-                const response = await fetch(`${apiUrlBack}orderList?page=${page + 1}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ email: userEmail, role }),
+          setFetchingMore(true);
+    
+          try {
+            const nextPage = page + 1; // Increment page number
+            await setPage(1);
+            const decodedToken = await decodeToken();
+            const userEmail = decodedToken.email;
+            const role = await userRole();
+            const response = await fetch(`${process.env.API_URL}orderList?page=${nextPage}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ email: userEmail, role, status: statusFilter }),
+            });
+    
+            if (response.ok) {
+              const data = await response.json();
+              if (data.length > 0) {
+                setOrderHistory(prevMenu => [...prevMenu, ...data]);
+                // Initialize preparation times for newly fetched order items
+                const newPreparationTimes = { ...preparationTimes };
+                data.forEach(order => {
+                  newPreparationTimes[order.orderId] = 17; // Initial preparation time set to 17 minutes
                 });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.length > 0) {
-                        setOrderHistory(prevMenu => [...prevMenu, ...data]);
-                    } else {
-                        setHasMore(false); // No more pages to fetch
-                    }
-                } else {
-                    throw new Error('Failed to fetch menu');
-                }
-            } catch (error) {
-                console.error('Error fetching data:', error);
-            } finally {
-                setFetchingMore(false);
+                setPreparationTimes(newPreparationTimes);
+                // Initialize showMenu state for newly fetched order items
+                const newShowMenuState = { ...showMenu };
+                data.forEach(order => {
+                  newShowMenuState[order.orderId] = false;
+                });
+                setShowMenu(newShowMenuState);
+                setPage(nextPage); // Update page number
+              } else {
+                setHasMore(false); // No more data available
+              }
+            } else {
+              throw new Error('Failed to fetch menu');
             }
+          } catch (error) {
+            console.error('Error fetching data:', error);
+          } finally {
+            setFetchingMore(false);
+          }
         }
-    };
-
+      };
 
     const onRefresh = () => {
         setRefreshing(true); // Set refreshing state to true when refresh action is triggered
@@ -144,24 +191,53 @@ export default function RestaurantOrderList({ navigation }) {
     return (
         <View style={styles.container}>
             {/* Navbar */}
-            <View style={styles.navbar}>
-                <TouchableOpacity onPress={() => { navigation.navigate("CustomerProfile") }}>
-                    <AntDesign name="arrowleft" size={24} style={styles.icon} />
-                </TouchableOpacity>
-                <Text style={styles.title}>Order</Text>
-            </View>
+            <View style={styles.navbarContainer}>
+        <View style={styles.navbar}>
+          <TouchableOpacity onPress={() => { navigation.navigate("CustomerProfile") }}>
+            <AntDesign name="arrowleft" size={24} style={styles.icon} />
+          </TouchableOpacity>
+          <Text style={styles.title}>Order</Text>
+        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.statusButtonsContainer}
+        >
+          <TouchableOpacity style={statusFilter === "preparing" ? styles.selectedStatusTitleBtn : styles.statusTitleBtn} onPress={() => handleStatusFilter("preparing")}>
+            <Text style={statusFilter === "preparing" ? styles.selectedStatusTitle : styles.statusTitle}>New Order</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={statusFilter === "assign" ? styles.selectedStatusTitleBtn : styles.statusTitleBtn} onPress={() => handleStatusFilter("assign")}>
+            <Text style={statusFilter === "assign" ? styles.selectedStatusTitle : styles.statusTitle}>Accepted</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={statusFilter === "pick up" ? styles.selectedStatusTitleBtn : styles.statusTitleBtn} onPress={() => handleStatusFilter("pick up")}>
+            <Text style={statusFilter === "pick up" ? styles.selectedStatusTitle : styles.statusTitle}>Pick up</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={statusFilter === "delivered" ? styles.selectedStatusTitleBtn : styles.statusTitleBtn} onPress={() => handleStatusFilter("delivered")}>
+            <Text style={statusFilter === "delivered" ? styles.selectedStatusTitle : styles.statusTitle}>Delivered</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={statusFilter === "dispute" ? styles.selectedStatusTitleBtn : styles.statusTitleBtn} onPress={() => handleStatusFilter("dispute")}>
+            <Text style={statusFilter === "dispute" ? styles.selectedStatusTitle : styles.statusTitle}>Dispute</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
 
             {/* Loader */}
             {loading ? (
                 <View style={styles.loader}>
                     <ActivityIndicator size="large" color="#0000ff" />
+                    <Text style={{ color: "black" }}>checking {filterLoadingText}</Text>
                 </View>
             ) : (orderHistory.length === 0) ? (
                 // Render text in center if processingFees and deliveryFees are undefined
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                    <Text style={{ fontSize: 18, textAlign: 'center', color: 'black' }}>Oops! Unable to load order history, please try again.</Text>
+                    <Text style={{ fontSize: 18, textAlign: 'center', color: 'black' }}>No {filterLoadingText}.</Text>
                 </View>
-            ) : (
+            ) : (orderHistory ==="error") ? (
+              // Render text in center if processingFees and deliveryFees are undefined
+              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 18, textAlign: 'center', color: 'black' }}>Oops! Unable to load order history, please try again.</Text>
+              </View>
+          ):(
                 <ScrollView
                     showsVerticalScrollIndicator={false}
                     onScroll={({ nativeEvent }) => {
@@ -184,7 +260,12 @@ export default function RestaurantOrderList({ navigation }) {
                     {/* Order History */}
                     {Array.isArray(orderHistory) && orderHistory.map(order => (
                         <TouchableOpacity
-                            key={order._id} onPress={() => navigation.navigate("DeliveryOrders", { orderId: order.orderId })}
+                            key={order._id} onPress={() => {
+                              if ( statusFilter !== "dispute" && statusFilter !=="delivered") {
+                                navigation.replace("DeliveryOrders", { orderId: order.orderId });
+                              }
+                            }}
+                            
                             activeOpacity={0.8}
                         >
                             <View style={styles.orderItem}>
@@ -195,23 +276,50 @@ export default function RestaurantOrderList({ navigation }) {
                                             <Text style={styles.createdAt}>{formatTimeDifference(order.createdAt)}</Text>
                                         </View>
                                         <View style={{ marginBottom: 20, flexDirection: "row", alignItems: "center" }}>
-                                            <Text style={styles.statusText}>PREPARING</Text>
+                                            {order.status==="preparing" && order.assignStatus==="yet to assign" && (
+                                            <Text style={styles.statusText}>NEW ORDER</Text>
+                                            )}
+                                            {order.status==="preparing" && order.assignStatus==="assign" && (
+                                            <Text style={styles.statusText}>ACCEPTED</Text>
+                                            )}
+                                            {order.status==="pick up" && order.assignStatus==="assign" && (
+                                            <Text style={styles.statusText}>PICKED UP</Text>
+                                            )}
+                                            {order.status==="delivered" && order.assignStatus==="assign" && (
+                                            <Text style={styles.statusText}>DELIVERED</Text>
+                                            )}
                                         </View>
                                         <Text style={styles.restaurant}>Restaurant Name: {order.restaurantName}</Text>
                                         <Text style={styles.status}>Status: {order.status}</Text>
-                                        <Text style={styles.price}>Expected earning ₹ {parseFloat(order.deliveryFees) + parseFloat(order.processingFees)}</Text>
-                                        {calculateTimeDifference(order.createdAt) && order.status === 'ordered' && (
+                                        <Text style={styles.price}>{order.status !=="delivered" ? "Expected earning" : "Earning"}  ₹ {parseFloat(order.deliveryFees) + parseFloat(order.processingFees)}</Text>
+                                        {calculateTimeDifference(order.createdAt) && order.assignStatus === 'yet to assign' && (
                                             <Text style={{ textAlign: "center" }}>
                                                 You have {calculateTimeDifference(order.createdAt)} to Accept Order
                                             </Text>
                                         )}
 
-                                        {order.status !== 'cancel' && order.status !== 'delivered' && order.status !== 'confirm' ? (
-                                            <TouchableOpacity style={styles.acceptButton}>
+                                        {order.assignStatus==="yet to assign" ? (
+                                            <TouchableOpacity  style={styles.acceptButton} onPress={() => {
+                                              if ( statusFilter !== "dispute" && statusFilter !=="delivered") {
+                                                navigation.replace("DeliveryOrders", { orderId: order.orderId });
+                                              }
+                                            }}>
                                                 <Text style={styles.acceptButtonText}>View Details {calculateTimeDifference(order.createdAt)}</Text>
                                             </TouchableOpacity>
+                                        ) : (order.status !== 'cancel' && order.status !== 'delivered' ) ? (
+                                          <TouchableOpacity style={styles.acceptButton} onPress={() => {
+                                            if ( statusFilter !== "dispute" && statusFilter !=="delivered") {
+                                              navigation.replace("DeliveryOrders", { orderId: order.orderId });
+                                            }
+                                          }}>
+                                          <Text style={styles.acceptButtonText}>View Details</Text>
+                                      </TouchableOpacity>
                                         ) : (
-                                            <TouchableOpacity style={[styles.acceptButton, { backgroundColor: 'darkgray' }]}>
+                                            <TouchableOpacity style={[styles.acceptButton, { backgroundColor: 'darkgray' }]} onPress={() => {
+                                              if ( statusFilter !== "dispute" && statusFilter !=="delivered") {
+                                                navigation.replace("DeliveryOrders", { orderId: order.orderId });
+                                              }
+                                            }}>
                                                 <Text style={styles.acceptButtonText}>{order.status}</Text>
                                             </TouchableOpacity>
                                         )}
@@ -237,20 +345,51 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#f8f8f8',
     },
-    navbar: {
+    navbarContainer: {
+        borderBottomWidth: 1,
+        borderBottomColor: '#ddd',
+        elevation: 3,
+        marginBottom: 20
+      },
+      navbar: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#fff',
         paddingVertical: 10,
         paddingHorizontal: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#ddd',
-        elevation: 3,
-    },
-    icon: {
+      },
+      statusTitleBtn: {
+        backgroundColor: "#e3e3e3",
+    paddingHorizontal: 15,
+    paddingVertical: 7,
+    borderRadius: 10,
+    marginHorizontal: 5,
+        // height:Dimensions.get("screen").height - 817,
+        paddingVertical: 7,
+        flexDirection: "row",
+        justifyContent: "center",
+        alignItems: "center",
+      },
+      selectedStatusTitleBtn: {
+        paddingHorizontal: 7,
+        borderRadius: 5,
+        // height:Dimensions.get("screen").height - 817,
+        flexDirection: "row",
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#FE5301"
+      },
+      statusTitle: {
+        fontSize: 12,
+        color:"black"
+      },
+      selectedStatusTitle: {
+        color: "white"
+      },
+      icon: {
         marginRight: 10,
         color: '#333',
-    },
+      },
     title: {
         fontSize: 20,
         fontWeight: 'bold',
@@ -322,5 +461,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginVertical: 10,
         marginBottom: 10
+    },
+    statusButtonsContainer: {
+      flexDirection: 'row',
+      paddingVertical: 10,
+      paddingHorizontal: 15,
     },
 });
