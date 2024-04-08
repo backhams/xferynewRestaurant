@@ -142,7 +142,7 @@ export default function CompleteOrder({ navigation, route }) {
         "Accuracy Low",
         `Accuracy is ${accuracy} meters. Please select your address from the map manually.`
       );
-    } else if (distance>=5){
+    } else if (distance>=3.5){
       Alert.alert(
         "Unavailable",
         `Delivery to this location is not available from this restaurant. Please select another location.`
@@ -285,7 +285,7 @@ export default function CompleteOrder({ navigation, route }) {
               />
             </MapView>
             {/* Show either accuracy information or red-colored text based on condition */}
-    {(accuracy !== null && distance !== null && distance > 5) ? (
+    {(accuracy !== null && distance !== null && distance > 3.5) ? (
       <View style={styles.accuracyContainer}>
         <Text style={{ color: 'red', textAlign: 'center' }}>
         Delivery to this location is not available from this restaurant. Please select another location.

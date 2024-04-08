@@ -28,6 +28,46 @@ export default function DeliveryDashboard({navigation}) {
   const [loading, setLoading] = useState(false);
   const [responseText, setResponseText] = useState('');
   const [sideMenuVisible, setSideMenuVisible] = useState(false);
+  const [graphLoader, setGraphLoader] = useState(true);
+
+
+  useEffect(() => {
+    fetchData(); // Fetch data when component mounts
+  }, []);
+
+  const fetchData = async () => {
+    setGraphLoader(true);
+    try {
+      const decodedToken = await decodeToken();
+      const response = await fetch(`${apiUrlBack}graphEarningData`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: decodedToken.email,
+          date: selectedOption
+        }),
+      });
+
+      if (!response.ok) {
+        console.log('Failed to fetch data');
+      }
+
+      const data = await response.json();
+     console.log(data) // Set the fetched data to state
+    } catch (error) {
+      console.log('Error fetching data:', error);
+      Alert.alert('Error', 'Failed to fetch data. Please try again later.');
+    } finally {
+      setGraphLoader(false);
+    }
+  };
+
+  // Render loading spinner while data is being fetched
+  if (graphLoader) {
+    return <Text>Loading...</Text>;
+  }
 
   useEffect(() => {
     const fetchData = async () => {

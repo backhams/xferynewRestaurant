@@ -70,6 +70,7 @@ export default function App() {
       initialRouteName={initialRoute}
       screenOptions={{
         headerShown: false,
+        // animationEnabled: false,
         
       }}
     >

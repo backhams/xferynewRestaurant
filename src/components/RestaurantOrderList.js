@@ -428,7 +428,7 @@ export default function RestaurantOrderList({ navigation }) {
           showsVerticalScrollIndicator={false}
           onScroll={({ nativeEvent }) => {
             const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
-            const paddingToBottom = 20;
+            const paddingToBottom =20;
             if (
               layoutMeasurement.height + contentOffset.y >=
               contentSize.height - paddingToBottom
